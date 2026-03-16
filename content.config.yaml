@@ -1,0 +1,173 @@
+titleLine1: 全球人气
+titleLine2: 前五游戏
+watermark: ""
+fps: 60
+width: 1920
+height: 1080
+timing:
+  introDuration: 2
+  rankTransitionDuration: 2
+  titleCardDuration: 1.5
+  endingDuration: 1
+  gameplayDurations:
+    - 15
+    - 12
+    - 12
+    - 12
+    - 14
+games:
+  - rank: 5
+    titleEn: Cholera
+    titleZh: 霍乱
+    bgColor: "#3a5a40"
+    clips:
+      - src: cholera/clip_001.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 0
+        paddedDurationSec: 2.5
+      - src: cholera/clip_002.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 1.5
+        paddedDurationSec: 2.5
+      - src: cholera/clip_003.mp4
+        startFrom: 0.5
+        durationSec: 1.8
+        offsetSec: 3
+        paddedDurationSec: 2.8
+      - src: cholera/clip_004.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 4.8
+        paddedDurationSec: 2.5
+      - src: cholera/clip_005.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 6.3
+        paddedDurationSec: 2.3
+      - src: cholera/clip_006.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 7.6
+        paddedDurationSec: 2.5
+      - src: cholera/clip_007.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 9.1
+        paddedDurationSec: 2.5
+      - src: cholera/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 2
+        offsetSec: 10.6
+        paddedDurationSec: 3
+      - src: cholera/clip_009.mp4
+        startFrom: 0.5
+        durationSec: 2
+        offsetSec: 12.6
+        paddedDurationSec: 3
+    subtitles:
+      - text: 绝地求生手游版
+        startSec: 1
+        durationSec: 2.5
+      - text: 战术竞技与团队合作的完美融合
+        startSec: 4
+        durationSec: 3
+      - text: 大吉大利，今晚吃鸡！
+        startSec: 7
+        durationSec: 2.5
+      - text: 大逃杀类型的经典神作
+        startSec: 10
+        durationSec: 2.5
+    stats:
+      - value: 146,000,000+
+        startSec: 7
+        durationSec: 2.5
+  - rank: 4
+    titleEn: Subway Surfers
+    titleZh: 地铁跑酷
+    bgColor: "#f4a236"
+    clips: []
+    subtitles:
+      - text: 地铁跑酷
+        startSec: 1
+        durationSec: 2
+      - text: 简单上手的跑酷玩法
+        startSec: 4
+        durationSec: 2.5
+      - text: 全球下载量超过40亿次
+        startSec: 7
+        durationSec: 2.5
+      - text: 定义跑酷标杆
+        startSec: 10
+        durationSec: 2
+    stats:
+      - value: 4,000,000,000+
+        startSec: 7
+        durationSec: 2.5
+  - rank: 3
+    titleEn: Minecraft
+    titleZh: 我的世界
+    bgColor: "#5b8731"
+    clips: []
+    subtitles:
+      - text: 我的世界
+        startSec: 1
+        durationSec: 2
+      - text: 无限创造的沙盒世界
+        startSec: 4
+        durationSec: 2.5
+      - text: 销量超过3亿份
+        startSec: 7
+        durationSec: 2.5
+      - text: 永不过时的经典之作
+        startSec: 10
+        durationSec: 2
+    stats:
+      - value: 300,000,000+
+        startSec: 7
+        durationSec: 2.5
+  - rank: 2
+    titleEn: Candy Crush Saga
+    titleZh: 糖果传奇
+    bgColor: "#1a8fbf"
+    clips: []
+    subtitles:
+      - text: 糖果传奇
+        startSec: 1
+        durationSec: 2
+      - text: 三消游戏的王者
+        startSec: 4
+        durationSec: 2.5
+      - text: 日活跃玩家超过2亿
+        startSec: 7
+        durationSec: 2.5
+      - text: 休闲游戏的巅峰代表
+        startSec: 10
+        durationSec: 2
+    stats:
+      - value: 200,000,000+
+        startSec: 7
+        durationSec: 2.5
+  - rank: 1
+    titleEn: 王者荣耀
+    titleZh: Honor of Kings
+    bgColor: "#c4922a"
+    clips: []
+    subtitles:
+      - text: 王者荣耀
+        startSec: 1
+        durationSec: 2
+      - text: 国民级MOBA手游
+        startSec: 4
+        durationSec: 2.5
+      - text: 日活跃用户超过1亿
+        startSec: 7
+        durationSec: 2.5
+      - text: 当之无愧的全球第一手游
+        startSec: 10
+        durationSec: 3
+    stats:
+      - value: 100,000,000+
+        startSec: 7
+        durationSec: 2.5

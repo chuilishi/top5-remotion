@@ -1,0 +1,161 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f0f13; color: #e0e0e0; min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Tab Bar */
+.tab-bar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; gap: 0; background: #111118; border-bottom: 1px solid #22222e;
+  padding: 0 24px;
+}
+.tab-btn {
+  padding: 12px 24px; border-radius: 0; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; background: transparent; color: #666;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.tab-btn:hover { color: #aaa; }
+.tab-btn.active { color: #ff4444; border-bottom-color: #ff4444; }
+
+/* Config Tab */
+.container { max-width: 800px; margin: 0 auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Edit Tab - Full Width */
+.app-fullwidth { width: 100%; }
+.edit-container { display: flex; height: calc(100vh - 49px); overflow: hidden; }
+.edit-sidebar {
+  width: 280px; min-width: 280px; padding: 16px; overflow-y: auto;
+  border-right: 1px solid #22222e; background: #111118;
+}
+.edit-main { flex: 1; padding: 16px; overflow-y: auto; }
+.empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #555; font-size: 16px; }
+.header { text-align: center; padding: 12px 0 4px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.logo { font-size: 24px; filter: drop-shadow(0 0 8px #ff4444); }
+h1 { font-size: 20px; font-weight: 700; color: #fff; }
+.info-bar { background: #1a1a28; border: 1px solid #2a2a3a; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #888; line-height: 1.7; }
+.section { background: #16161e; border: 1px solid #22222e; border-radius: 12px; padding: 16px; }
+label { display: block; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.hint { font-size: 11px; color: #444; text-transform: none; letter-spacing: 0; font-weight: 400; }
+textarea, select {
+  width: 100%; background: #0f0f13; border: 1px solid #2a2a36; border-radius: 8px;
+  color: #e0e0e0; font-size: 13px; font-family: inherit; padding: 12px; resize: vertical;
+  outline: none; line-height: 1.6; transition: border-color 0.2s;
+}
+textarea:focus, select:focus { border-color: #ff4444; }
+textarea::placeholder { color: #333; }
+select {
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+}
+.cmd-box { background: #0f0f13; border: 1px solid #2a2a36; border-radius: 8px; padding: 2px 4px; transition: border-color 0.2s; }
+.cmd-box:focus-within { border-color: #cc8800; }
+.cmd-box input {
+  width: 100%; background: transparent; border: none; color: #ffcc66;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 13px; padding: 10px; outline: none;
+}
+.section-row { display: flex; gap: 12px; }
+.section-row > .section { flex: 1; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; }
+button { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: #ff4444; color: #fff; }
+.btn-primary:hover { background: #ff2222; transform: translateY(-1px); }
+.btn-primary:disabled { background: #444; color: #666; cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: #555; font-size: 12px; padding: 4px 10px; border: 1px solid #2a2a36; border-radius: 6px; }
+.btn-ghost:hover { color: #aaa; border-color: #444; }
+.btn-save { background: #22c55e; color: #fff; font-size: 13px; padding: 8px 18px; border-radius: 8px; }
+.btn-save:hover { background: #16a34a; transform: translateY(-1px); }
+.btn-add { background: #3b82f6; color: #fff; font-size: 12px; padding: 6px 14px; }
+.btn-add:hover { background: #2563eb; }
+.btn-remove { background: transparent; color: #666; font-size: 16px; padding: 2px 6px; border: 1px solid #2a2a36; border-radius: 4px; cursor: pointer; line-height: 1; }
+.btn-remove:hover { color: #ff4444; border-color: #ff4444; }
+.collapse-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+.collapse-arrow { color: #555; font-size: 14px; transition: transform 0.2s; }
+.collapse-arrow.open { transform: rotate(90deg); }
+.game-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+
+/* URL Preview */
+.url-preview { margin-top: 8px; }
+.url-preview-header { font-size: 11px; color: #44cc44; margin-bottom: 6px; font-weight: 600; }
+.url-list { list-style: none; padding: 0; }
+.url-list li {
+  font-size: 12px; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  padding: 4px 10px; margin: 3px 0; background: #0f0f16; border: 1px solid #1e2e1e;
+  border-radius: 6px; color: #7ab3ff; word-break: break-all; line-height: 1.5;
+  display: flex; align-items: center; gap: 8px;
+}
+.url-list li::before { content: "🔗"; font-size: 11px; flex-shrink: 0; }
+.url-list li a { color: #7ab3ff; text-decoration: none; }
+.url-list li a:hover { color: #aaccff; text-decoration: underline; }
+
+/* Log */
+.log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.log-header label { margin-bottom: 0; }
+.log-output {
+  background: #0a0a0d; border: 1px solid #1e1e28; border-radius: 8px; padding: 14px;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 12px;
+  line-height: 1.7; max-height: 400px; overflow-y: auto; overflow-x: auto; color: #aaa; white-space: pre-wrap; word-break: break-all;
+}
+.log-line.info { color: #7ab3ff; }
+.log-line.success { color: #44cc44; }
+.log-line.error { color: #ff6666; }
+
+/* Result */
+#resultArea {
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 12px;
+  line-height: 1.7; background: #0a0a0d; color: #7ab3ff; word-break: break-all;
+}
+
+/* Timeline Editor */
+.video-preview { width: 100%; border-radius: 8px; background: #000; max-height: 300px; }
+.timeline-scroll { position: relative; margin-top: 12px; }
+.timeline-wrapper { position: relative; cursor: pointer; min-width: 100%; }
+.timeline-track {
+  position: relative; background: #0a0a0d; border: 1px solid #1e1e28; border-radius: 8px;
+  height: 40px; margin: 6px 0; cursor: pointer; overflow: hidden;
+}
+.timeline-bar {
+  position: absolute; top: 4px; bottom: 4px; border-radius: 4px; font-size: 10px;
+  display: flex; align-items: center; padding: 0 12px; color: #fff; font-weight: 600;
+  cursor: grab; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-width: 20px;
+}
+.timeline-bar.subtitle { background: #3b82f6cc; }
+.timeline-bar.stat { background: #f59e0bcc; }
+.timeline-bar.clip { background: #22c55eaa; }
+.timeline-bar:hover { filter: brightness(1.2); }
+.timeline-bar.dragging { opacity: 0.7; cursor: grabbing; }
+.timeline-handle {
+  position: absolute; top: 0; bottom: 0; width: 8px; z-index: 5;
+}
+.timeline-handle-left { left: 0; cursor: w-resize; border-radius: 4px 0 0 4px; }
+.timeline-handle-right { right: 0; cursor: e-resize; border-radius: 0 4px 4px 0; }
+.timeline-handle:hover, .timeline-handle.active { background: rgba(255,255,255,0.25); }
+.timeline-ruler {
+  position: relative; height: 20px; background: #0a0a0d; border: 1px solid #1e1e28;
+  border-radius: 4px 4px 0 0; font-size: 9px; color: #555; overflow: hidden;
+}
+.timeline-ruler span { position: absolute; bottom: 2px; transform: translateX(-50%); }
+.timeline-playhead {
+  position: absolute; top: 0; bottom: 0; width: 2px; background: #ff4444;
+  pointer-events: none; z-index: 10; transition: left 0.05s linear;
+}
+
+/* Timing inputs */
+.timing-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; font-size: 12px; }
+.timing-row label { margin: 0; min-width: 60px; font-size: 11px; }
+.timing-input {
+  width: 60px; background: #0f0f13; border: 1px solid #2a2a36; border-radius: 4px;
+  color: #ffcc66; font-family: monospace; font-size: 12px; padding: 4px 6px; text-align: center; outline: none;
+}
+.timing-input:focus { border-color: #ff4444; }
+.timing-text-input {
+  flex: 1; background: #0f0f13; border: 1px solid #2a2a36; border-radius: 4px;
+  color: #e0e0e0; font-size: 12px; padding: 4px 8px; outline: none;
+}
+.timing-text-input:focus { border-color: #ff4444; }
+.sub-item {
+  background: #0a0a0d; border: 1px solid #1e1e28; border-radius: 8px; padding: 10px; margin: 6px 0;
+}

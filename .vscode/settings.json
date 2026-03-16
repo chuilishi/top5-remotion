@@ -1,0 +1,47 @@
+{
+  "chat.agent.enabled": true,
+  "chat.agent.maxRequests": 100000000,
+  "github.copilot.chat.agent.maxRequests": 100000000,
+  "github.copilot.chat.agent.autoFix": true,
+  "chat.tools.global.autoApprove": true,
+  "chat.tools.terminal.enableAutoApprove": true,
+  "chat.tools.terminal.ignoreDefaultAutoApproveRules": true,
+  "chat.tools.terminal.autoApprove": {
+    "/^Get-/": true,
+    "/^Set-/": true,
+    "/^New-/": true,
+    "/^Remove-/": true,
+    "/^Copy-/": true,
+    "/^Move-/": true,
+    "/^Test-/": true,
+    "/^Start-/": true,
+    "/^Stop-/": true,
+    "/^Invoke-/": true,
+    "/^npm\\s+(install|i|ci|run|test|build|start|dev)\\b/": true,
+    "/^(yarn|pnpm|bun)\\s+(add|install|run|dev|build|test|start)\\b/": true,
+    "/^(python|python3|uv|pip)\\s+/": true,
+    "/^(make|cmake|gradle|mvn|cargo)\\s+/": true,
+    "/^docker\\s+(ps|images|logs|inspect)\\b/": true,
+    "/^code\\s+--install-extension\\s+/": true,
+    "rm -rf /": false,
+    "rmdir /s /q C:\\": false,
+    "/^format\\s+/": false,
+    "/^del\\s+\\/[sS]\\s+C:\\\\$/": false
+  },
+  "chat.tools.urls.autoApprove": [
+    "https://*",
+    "http://localhost:*",
+    "http://127.0.0.1:*"
+  ],
+  "chat.mcp.access": true,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+    "windsurf": true,
+    "cursor-global": true,
+    "cursor-workspace": true
+  },
+  "chat.mcp.apps.enabled": true,
+  "chat.mcp.autostart": "newAndOutdated",
+  "chat.viewSessions.enabled": true,
+  "workbench.secondarySideBar.showLabels": true
+}

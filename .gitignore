@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+out/
+tools/ui/dist/
+
+# Runtime/temp
+.current-project
+tools/.tmp/
+temp_analysis/
+
+# Generated config (rebuild with: npm run config)
+src/config/content.config.ts
+src/config/style.config.ts
+
+# Video assets (too large for git)
+public/*/
+
+# OS
+.DS_Store
+Thumbs.db
