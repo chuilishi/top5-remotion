@@ -1,173 +1,369 @@
-titleLine1: 全球人气
-titleLine2: 前五游戏
+titleLine1: 全球最强
+titleLine2: 五大搜索引擎
 watermark: ""
 fps: 60
 width: 1920
 height: 1080
 timing:
-  introDuration: 2
+  introDuration: 1.5
   rankTransitionDuration: 2
-  titleCardDuration: 1.5
-  endingDuration: 1
+  titleCardDuration: 0
+  endingDuration: 0
   gameplayDurations:
-    - 15
+    - 12
     - 12
     - 12
     - 12
     - 14
+
 games:
   - rank: 5
-    titleEn: Cholera
-    titleZh: 霍乱
-    bgColor: "#3a5a40"
+    titleEn: Baidu
+    titleZh: 百度
+    bgColor: "#2932e1"
     clips:
-      - src: cholera/clip_001.mp4
+      - src: baidu/clip_001.mp4
+        startFrom: 0.5
+        durationSec: 1.4
+        offsetSec: 0
+        paddedDurationSec: 2.4
+      - src: baidu/clip_002.mp4
+        startFrom: 0.5
+        durationSec: 1.4
+        offsetSec: 1.4
+        paddedDurationSec: 2.44
+      - src: baidu/clip_003.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 2.8
+        paddedDurationSec: 2.36
+      - src: baidu/clip_004.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 4.1
+        paddedDurationSec: 2.32
+      - src: baidu/clip_005.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 5.4
+        paddedDurationSec: 2.32
+      - src: baidu/clip_006.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 6.7
+        paddedDurationSec: 2.36
+      - src: baidu/clip_007.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 8.0
+        paddedDurationSec: 2.3
+      - src: baidu/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 9.3
+        paddedDurationSec: 2.3
+      - src: baidu/clip_009.mp4
+        startFrom: 0.0
+        durationSec: 1.4
+        offsetSec: 10.6
+        paddedDurationSec: 1.96
+    subtitles:
+      - text: 中国搜索引擎霸主
+        startSec: 0.5
+        durationSec: 2.5
+      - text: 全球第五大搜索引擎
+        startSec: 3.5
+        durationSec: 2.5
+      - text: 文心大模型 引领AI转型
+        startSec: 6.5
+        durationSec: 2.5
+      - text: 无人驾驶也玩得转
+        startSec: 9.5
+        durationSec: 2.0
+    stats:
+      - value: "704,000,000+"
+        startSec: 4.0
+        durationSec: 2.5
+
+  - rank: 4
+    titleEn: Yandex
+    titleZh: Yandex
+    bgColor: "#FC3F1D"
+    clips:
+      - src: yandex/clip_001.mp4
         startFrom: 0.5
         durationSec: 1.5
         offsetSec: 0
-        paddedDurationSec: 2.5
-      - src: cholera/clip_002.mp4
+        paddedDurationSec: 2.56
+      - src: yandex/clip_002.mp4
         startFrom: 0.5
         durationSec: 1.5
         offsetSec: 1.5
-        paddedDurationSec: 2.5
-      - src: cholera/clip_003.mp4
-        startFrom: 0.5
-        durationSec: 1.8
-        offsetSec: 3
-        paddedDurationSec: 2.8
-      - src: cholera/clip_004.mp4
+        paddedDurationSec: 2.52
+      - src: yandex/clip_003.mp4
         startFrom: 0.5
         durationSec: 1.5
-        offsetSec: 4.8
-        paddedDurationSec: 2.5
-      - src: cholera/clip_005.mp4
+        offsetSec: 3.0
+        paddedDurationSec: 2.52
+      - src: yandex/clip_004.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 4.5
+        paddedDurationSec: 2.54
+      - src: yandex/clip_005.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 6.0
+        paddedDurationSec: 2.56
+      - src: yandex/clip_006.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 7.5
+        paddedDurationSec: 2.56
+      - src: yandex/clip_007.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 9.0
+        paddedDurationSec: 2.56
+      - src: yandex/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 10.5
+        paddedDurationSec: 2.52
+    subtitles:
+      - text: 俄罗斯搜索之王
+        startSec: 0.5
+        durationSec: 2.0
+      - text: 在本土击败了谷歌
+        startSec: 3.0
+        durationSec: 2.0
+      - text: 不只是搜索引擎
+        startSec: 5.5
+        durationSec: 2.0
+      - text: 自动驾驶 机器人 全面布局
+        startSec: 8.0
+        durationSec: 2.0
+      - text: 战斗民族的科技巨头
+        startSec: 10.5
+        durationSec: 1.5
+    stats:
+      - value: "110,000,000+"
+        startSec: 3.5
+        durationSec: 2.5
+
+  - rank: 3
+    titleEn: Yahoo
+    titleZh: 雅虎
+    bgColor: "#720e9e"
+    clips:
+      - src: yahoo/clip_001.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 0
+        paddedDurationSec: 2.2
+      - src: yahoo/clip_002.mp4
         startFrom: 0.5
         durationSec: 1.3
-        offsetSec: 6.3
+        offsetSec: 1.2
         paddedDurationSec: 2.3
-      - src: cholera/clip_006.mp4
+      - src: yahoo/clip_003.mp4
         startFrom: 0.5
         durationSec: 1.5
-        offsetSec: 7.6
+        offsetSec: 2.5
         paddedDurationSec: 2.5
-      - src: cholera/clip_007.mp4
+      - src: yahoo/clip_004.mp4
         startFrom: 0.5
-        durationSec: 1.5
-        offsetSec: 9.1
-        paddedDurationSec: 2.5
-      - src: cholera/clip_008.mp4
+        durationSec: 1.2
+        offsetSec: 4.0
+        paddedDurationSec: 2.2
+      - src: yahoo/clip_005.mp4
         startFrom: 0.5
-        durationSec: 2
-        offsetSec: 10.6
-        paddedDurationSec: 3
-      - src: cholera/clip_009.mp4
+        durationSec: 1.3
+        offsetSec: 5.2
+        paddedDurationSec: 2.3
+      - src: yahoo/clip_006.mp4
         startFrom: 0.5
-        durationSec: 2
-        offsetSec: 12.6
-        paddedDurationSec: 3
+        durationSec: 1.3
+        offsetSec: 6.5
+        paddedDurationSec: 2.3
+      - src: yahoo/clip_007.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 7.8
+        paddedDurationSec: 2.2
+      - src: yahoo/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 9.0
+        paddedDurationSec: 2.2
+      - src: yahoo/clip_009.mp4
+        startFrom: 0.5
+        durationSec: 1.8
+        offsetSec: 10.2
+        paddedDurationSec: 2.8
     subtitles:
-      - text: 绝地求生手游版
-        startSec: 1
+      - text: 互联网时代的活化石
+        startSec: 0.5
         durationSec: 2.5
-      - text: 战术竞技与团队合作的完美融合
-        startSec: 4
-        durationSec: 3
-      - text: 大吉大利，今晚吃鸡！
-        startSec: 7
+      - text: 曾经比谷歌还火
+        startSec: 3.5
+        durationSec: 2.0
+      - text: 日本搜索市场 至今称霸
+        startSec: 6.0
         durationSec: 2.5
-      - text: 大逃杀类型的经典神作
-        startSec: 10
+      - text: 从千亿帝国到卖身求生
+        startSec: 9.0
         durationSec: 2.5
     stats:
-      - value: 146,000,000+
-        startSec: 7
+      - value: "700,000,000+"
+        startSec: 7.0
         durationSec: 2.5
-  - rank: 4
-    titleEn: Subway Surfers
-    titleZh: 地铁跑酷
-    bgColor: "#f4a236"
-    clips: []
-    subtitles:
-      - text: 地铁跑酷
-        startSec: 1
-        durationSec: 2
-      - text: 简单上手的跑酷玩法
-        startSec: 4
-        durationSec: 2.5
-      - text: 全球下载量超过40亿次
-        startSec: 7
-        durationSec: 2.5
-      - text: 定义跑酷标杆
-        startSec: 10
-        durationSec: 2
-    stats:
-      - value: 4,000,000,000+
-        startSec: 7
-        durationSec: 2.5
-  - rank: 3
-    titleEn: Minecraft
-    titleZh: 我的世界
-    bgColor: "#5b8731"
-    clips: []
-    subtitles:
-      - text: 我的世界
-        startSec: 1
-        durationSec: 2
-      - text: 无限创造的沙盒世界
-        startSec: 4
-        durationSec: 2.5
-      - text: 销量超过3亿份
-        startSec: 7
-        durationSec: 2.5
-      - text: 永不过时的经典之作
-        startSec: 10
-        durationSec: 2
-    stats:
-      - value: 300,000,000+
-        startSec: 7
-        durationSec: 2.5
+
   - rank: 2
-    titleEn: Candy Crush Saga
-    titleZh: 糖果传奇
-    bgColor: "#1a8fbf"
-    clips: []
+    titleEn: Bing
+    titleZh: 必应
+    bgColor: "#00809d"
+    clips:
+      - src: bing/clip_001.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 0
+        paddedDurationSec: 2.54
+      - src: bing/clip_002.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 1.5
+        paddedDurationSec: 2.38
+      - src: bing/clip_003.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 2.8
+        paddedDurationSec: 2.21
+      - src: bing/clip_004.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 4.0
+        paddedDurationSec: 2.54
+      - src: bing/clip_005.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 5.5
+        paddedDurationSec: 2.24
+      - src: bing/clip_006.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 6.7
+        paddedDurationSec: 2.34
+      - src: bing/clip_007.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 8.0
+        paddedDurationSec: 2.20
+      - src: bing/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 9.2
+        paddedDurationSec: 2.32
+      - src: bing/clip_009.mp4
+        startFrom: 0.5
+        durationSec: 1.5
+        offsetSec: 10.5
+        paddedDurationSec: 2.54
     subtitles:
-      - text: 糖果传奇
-        startSec: 1
-        durationSec: 2
-      - text: 三消游戏的王者
-        startSec: 4
+      - text: 微软的搜索野心
+        startSec: 0.5
+        durationSec: 2.0
+      - text: 全球第二 桌面端称王
+        startSec: 3.0
         durationSec: 2.5
-      - text: 日活跃玩家超过2亿
-        startSec: 7
+      - text: AI加持 Copilot赋能
+        startSec: 6.0
         durationSec: 2.5
-      - text: 休闲游戏的巅峰代表
-        startSec: 10
-        durationSec: 2
+      - text: 十亿次AI对话
+        startSec: 9.0
+        durationSec: 2.5
     stats:
-      - value: 200,000,000+
-        startSec: 7
+      - value: "10,000,000,000+"
+        startSec: 7.0
         durationSec: 2.5
+
   - rank: 1
-    titleEn: 王者荣耀
-    titleZh: Honor of Kings
-    bgColor: "#c4922a"
-    clips: []
+    titleEn: Google
+    titleZh: 谷歌
+    bgColor: "#4285F4"
+    clips:
+      - src: google/clip_001.mp4
+        startFrom: 0.5
+        durationSec: 1.3
+        offsetSec: 0
+        paddedDurationSec: 2.34
+      - src: google/clip_002.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 1.3
+        paddedDurationSec: 2.22
+      - src: google/clip_003.mp4
+        startFrom: 0.5
+        durationSec: 1.7
+        offsetSec: 2.5
+        paddedDurationSec: 2.71
+      - src: google/clip_004.mp4
+        startFrom: 0.5
+        durationSec: 1.0
+        offsetSec: 4.2
+        paddedDurationSec: 2.0
+      - src: google/clip_005.mp4
+        startFrom: 0.5
+        durationSec: 1.2
+        offsetSec: 5.2
+        paddedDurationSec: 2.2
+      - src: google/clip_006.mp4
+        startFrom: 2.4
+        durationSec: 1.0
+        offsetSec: 6.4
+        paddedDurationSec: 5.81
+      - src: google/clip_007.mp4
+        startFrom: 2.0
+        durationSec: 1.2
+        offsetSec: 7.4
+        paddedDurationSec: 5.14
+      - src: google/clip_008.mp4
+        startFrom: 0.5
+        durationSec: 1.7
+        offsetSec: 8.6
+        paddedDurationSec: 2.72
+      - src: google/clip_009.mp4
+        startFrom: 0.5
+        durationSec: 1.0
+        offsetSec: 10.3
+        paddedDurationSec: 2.0
+      - src: google/clip_010.mp4
+        startFrom: 0.5
+        durationSec: 1.0
+        offsetSec: 11.3
+        paddedDurationSec: 2.0
+      - src: google/clip_011.mp4
+        startFrom: 0.5
+        durationSec: 1.7
+        offsetSec: 12.3
+        paddedDurationSec: 2.71
     subtitles:
-      - text: 王者荣耀
-        startSec: 1
-        durationSec: 2
-      - text: 国民级MOBA手游
-        startSec: 4
+      - text: 搜索引擎之神
+        startSec: 0.5
+        durationSec: 2.0
+      - text: 占据全球九成市场
+        startSec: 3.0
         durationSec: 2.5
-      - text: 日活跃用户超过1亿
-        startSec: 7
+      - text: 每天八十五亿次搜索
+        startSec: 6.0
         durationSec: 2.5
-      - text: 当之无愧的全球第一手游
-        startSec: 10
-        durationSec: 3
+      - text: 从搜索到AI 统治一切
+        startSec: 9.0
+        durationSec: 2.5
+      - text: 无人能撼动的霸主
+        startSec: 12.0
+        durationSec: 2.0
     stats:
-      - value: 100,000,000+
-        startSec: 7
-        durationSec: 2.5
+      - value: "8,500,000,000+"
+        startSec: 7.5
+        durationSec: 2.0
