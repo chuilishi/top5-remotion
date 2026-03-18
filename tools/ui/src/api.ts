@@ -49,11 +49,12 @@ export async function saveTiming(
   subtitles: GameData['subtitles'],
   stats: GameData['stats'],
   clips: GameData['clips'],
+  voiceover?: GameData['voiceover'],
 ) {
   await fetch('/api/save-timing', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rank, subtitles, stats, clips }),
+    body: JSON.stringify({ rank, subtitles, stats, clips, voiceover }),
   });
 }
 

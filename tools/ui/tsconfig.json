@@ -15,7 +15,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@top5/*": ["../../src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../../src/config/types.ts", "../../src/utils/timeline.ts"]
 }

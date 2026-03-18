@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GameData, ClipData, SubtitleData, StatData } from './types';
+import type { GameData, ClipData, SubtitleData, StatData, VoiceoverData } from './types';
 import { fetchGames, fetchGameDetail, saveGameName as apiSaveGameName, saveTiming as apiSaveTiming, streamAuto } from './api';
 import { DEFAULT_PROMPT, extractUrls, titleToFolder, loadPersisted, savePersisted } from './utils';
 import { ProjectSelector } from './components/ProjectSelector';
@@ -37,6 +37,7 @@ export function App() {
   const [editClips, setEditClips] = useState<ClipData[]>([]);
   const [editSubtitles, setEditSubtitles] = useState<SubtitleData[]>([]);
   const [editStats, setEditStats] = useState<StatData[]>([]);
+  const [editVoiceover, setEditVoiceover] = useState<VoiceoverData[]>([]);
 
   useEffect(() => { fetchGames().then(setGames).catch(() => {}); }, []);
 
@@ -58,10 +59,12 @@ export function App() {
       setEditClips(detail.clips.map(c => ({ ...c })));
       setEditSubtitles((detail.subtitles || []).map(s => ({ ...s })));
       setEditStats((detail.stats || []).map(s => ({ ...s })));
+      setEditVoiceover((detail.voiceover || []).map(v => ({ ...v })));
     } else {
       setEditClips([]);
       setEditSubtitles([]);
       setEditStats([]);
+      setEditVoiceover([]);
     }
   }, [rank]);
 
@@ -105,8 +108,8 @@ export function App() {
   }, [urlText, titleEn, apiBase, apiKey, apiModel, topicText, rank, systemPrompt, log, loadTimeline]);
 
   const handleSaveTiming = useCallback(async () => {
-    await apiSaveTiming(rank, editSubtitles, editStats, editClips);
-  }, [rank, editSubtitles, editStats, editClips]);
+    await apiSaveTiming(rank, editSubtitles, editStats, editClips, editVoiceover);
+  }, [rank, editSubtitles, editStats, editClips, editVoiceover]);
 
   const reloadAll = useCallback(async () => {
     const g = await fetchGames().catch(() => []);
@@ -187,9 +190,11 @@ export function App() {
                 clips={editClips}
                 subtitles={editSubtitles}
                 stats={editStats}
+                voiceover={editVoiceover}
                 onClipsChange={setEditClips}
                 onSubtitlesChange={setEditSubtitles}
                 onStatsChange={setEditStats}
+                onVoiceoverChange={setEditVoiceover}
                 onSave={handleSaveTiming}
                 onRefresh={loadTimeline}
                 currentGame={currentGame}

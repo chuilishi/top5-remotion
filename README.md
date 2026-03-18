@@ -94,9 +94,9 @@ height: 1080
 
 timing:
   introDuration: 2
-  rankTransitionDuration: 2
-  titleCardDuration: 1.5
-  gameplayDurations: [12, 12, 12, 12, 14]  # per rank, #1 gets more time
+  rankTransitionDurations: [2, 2, 2, 2, 3]  # per rank; #1 gets extra suspense
+  titleCardDurations: [1.5, 1.5, 1.5, 1.5, 1.5]
+  gameplayDurations: [10, 10, 10, 10, 10]  # driven by voiceover duration
 
 games:
   - rank: 5

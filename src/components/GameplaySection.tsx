@@ -8,11 +8,15 @@ import {
   OffthreadVideo,
   staticFile,
   Sequence,
+  Series,
+  Audio,
+  random,
 } from "remotion";
 import { Watermark } from "./Watermark";
 import { CinematicOverlay } from "./CinematicOverlay";
 import { styleConfig } from "../config";
 import type { GameItem } from "../config";
+import { resolveClipLayout, computeVoiceDurations } from "../utils/timeline";
 
 // ─────────────────────────────────────────────
 // 字幕 — Canvas 2D 渲染 + 2x 超采样
@@ -118,11 +122,8 @@ const Subtitle: React.FC<{
 // 样式参数来源: style.config.yaml → statNumber, fonts.stat, colors
 // ─────────────────────────────────────────────
 
-// 确定性伪随机
-const statRand = (seed: number): number => {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
-};
+// 确定性伪随机 — Remotion 的 random() 是帧确定性的
+const statRand = (seed: number): number => random(`stat-${seed}`);
 
 const StatNumber: React.FC<{
   value: string;
@@ -518,31 +519,53 @@ const MultiClipBackground: React.FC<{ game: GameItem }> = ({ game }) => {
     return <FallbackBg game={game} />;
   }
 
+  const resolved = resolveClipLayout(clips);
+  const hasExplicitOffsets = clips.some((c) => c.offsetSec != null);
+
   return (
     <>
       <FallbackBg game={game} />
-      {clips.map((clip, idx) => {
-        const clipFrames = Math.round(clip.durationSec * fps);
-        const startFrame = clip.offsetSec != null
-          ? Math.round(clip.offsetSec * fps)
-          : (() => { let o = 0; for (let i = 0; i < idx; i++) o += Math.round(clips[i].durationSec * fps); return o; })();
-
-        return (
-          <Sequence
-            key={`clip-${idx}`}
-            from={startFrame}
-            durationInFrames={clipFrames}
-            layout="none"
-          >
-            <ClipWithKenBurns
-              src={clip.src}
-              startFrom={clip.startFrom ? Math.round(clip.startFrom * fps) : 0}
-              globalStartFrame={startFrame}
-              totalFrames={durationInFrames}
-            />
-          </Sequence>
-        );
-      })}
+      {hasExplicitOffsets
+        ? resolved.map((clip, idx) => {
+            const startFrame = Math.round(clip.offsetSec * fps);
+            const clipFrames = Math.round(clip.durationSec * fps);
+            return (
+              <Sequence
+                key={`clip-${idx}`}
+                from={startFrame}
+                durationInFrames={clipFrames}
+                layout="none"
+              >
+                <ClipWithKenBurns
+                  src={clip.src}
+                  startFrom={Math.round(clip.startFrom * fps)}
+                  globalStartFrame={startFrame}
+                  totalFrames={durationInFrames}
+                />
+              </Sequence>
+            );
+          })
+        : (
+          <Series>
+            {resolved.map((clip, idx) => {
+              const startFrame = Math.round(clip.offsetSec * fps);
+              return (
+                <Series.Sequence
+                  key={`clip-${idx}`}
+                  durationInFrames={Math.round(clip.durationSec * fps)}
+                  layout="none"
+                >
+                  <ClipWithKenBurns
+                    src={clip.src}
+                    startFrom={Math.round(clip.startFrom * fps)}
+                    globalStartFrame={startFrame}
+                    totalFrames={durationInFrames}
+                  />
+                </Series.Sequence>
+              );
+            })}
+          </Series>
+        )}
     </>
   );
 };
@@ -621,6 +644,27 @@ export const GameplaySection: React.FC<{
           />
         </Sequence>
       ))}
+
+      {game.voiceover && (() => {
+        const gpDur = game.clips
+          ? Math.max(...resolveClipLayout(game.clips).map((c) => c.offsetSec + c.durationSec))
+          : 600;
+        const voDurs = computeVoiceDurations(game.voiceover, gpDur);
+        return game.voiceover.map((vo, i) => {
+          const fromFrame = Math.round(vo.offsetSec * fps);
+          const durFrames = Math.max(1, Math.round(voDurs[i] * fps));
+          return (
+            <Sequence
+              key={`vo-${i}`}
+              from={fromFrame}
+              durationInFrames={durFrames}
+              layout="none"
+            >
+              <Audio src={staticFile(vo.src)} volume={1} />
+            </Sequence>
+          );
+        });
+      })()}
 
       <CinematicOverlay
         width={width}

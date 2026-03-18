@@ -1,0 +1,61 @@
+# ╔══════════════════════════════════════════════════════════╗
+# ║  Rank YAML 模板 — 每个排名位一个文件                      ║
+# ║  文件名: projects/{project}/rank_{N}_{kebab-titleEn}.yaml ║
+# ║  阶段 B (@copywriter) 填写: voiceover, subtitles, stats  ║
+# ║  阶段 C (@clip-editor) 追加: clips                       ║
+# ╚══════════════════════════════════════════════════════════╝
+
+rank: 5                        # 排名位 (5=最低, 1=最高)
+titleEn: ""                    # 英文名 (用于文件夹命名)
+titleZh: ""                    # 中文名 (用于配音/字幕)
+bgColor: "#333333"             # 主题色 (hex)
+
+# ── @copywriter 填写区域 ──────────────────────────────────
+
+voiceover:
+  # 按标点切分，每句一个条目
+  # offsetSec = 上一句 offsetSec + 上一句 TTS 时长 + 0.3 (间隔)
+  - src: "{project}/{folder}/vo_01.mp3"
+    text: "REPLACE_ME"
+    offsetSec: 0.0
+  - src: "{project}/{folder}/vo_02.mp3"
+    text: "REPLACE_ME"
+    offsetSec: 0.0              # = 上一句 offset + TTS 时长 + 0.3
+
+subtitles:
+  # 屏幕字幕，≤15 字/条，可比 voiceover 条目多
+  - text: "REPLACE_ME"
+    startSec: 0.0
+    durationSec: 0.0
+  - text: "REPLACE_ME"
+    startSec: 0.0
+    durationSec: 0.0
+
+stats:
+  # 大数字展示，与某条字幕同步
+  - value: "0"
+    startSec: 0.0
+    durationSec: 0.0
+
+# ── @clip-editor 填写区域 ─────────────────────────────────
+# ╔══════════════════════════════════════════════════════════╗
+# ║  CLIP RULES — clip-editor MUST follow                   ║
+# ║  • 7-12 clips, each 0.5-2.5s (target 1.0-1.5s)         ║
+# ║  • Total ≈ voiceover duration                           ║
+# ║  • ALL fields below are REQUIRED                        ║
+# ║  • offsetSec = prev offsetSec + prev durationSec        ║
+# ║  • File naming: clip_001.mp4, clip_002.mp4, ...         ║
+# ╚══════════════════════════════════════════════════════════╝
+
+clips:
+  - src: "{project}/{folder}/clip_001.mp4"
+    startFrom: 0.5              # 跳过 0.5s 容差
+    durationSec: 1.5            # MUST be 0.5-2.5s
+    offsetSec: 0                # 时间线起始位置
+    paddedDurationSec: 2.5      # = durationSec + 1.0 (含容差)
+  - src: "{project}/{folder}/clip_002.mp4"
+    startFrom: 0.5
+    durationSec: 1.2            # MUST be 0.5-2.5s
+    offsetSec: 1.5              # = prev offset(0) + prev dur(1.5)
+    paddedDurationSec: 2.2
+  # ... continue: 7-12 clips, total ≈ voiceover duration

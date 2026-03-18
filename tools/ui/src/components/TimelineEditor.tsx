@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Player, type PlayerRef } from '@remotion/player';
-import type { ClipData, SubtitleData, StatData, GameData } from '../types';
+import type { ClipData, SubtitleData, StatData, VoiceoverData, GameData } from '../types';
+import { resolveClipLayout, computeClipsDuration } from '@top5/utils/timeline';
 import { ClipPreview, type ClipPreviewProps } from './ClipPreview';
 
 const SNAP_PX = 8;
@@ -11,28 +12,29 @@ interface Props {
   clips: ClipData[];
   subtitles: SubtitleData[];
   stats: StatData[];
+  voiceover: VoiceoverData[];
   onClipsChange: (clips: ClipData[]) => void;
   onSubtitlesChange: (subs: SubtitleData[]) => void;
   onStatsChange: (stats: StatData[]) => void;
+  onVoiceoverChange: (vo: VoiceoverData[]) => void;
   onSave: () => Promise<void>;
   onRefresh: () => void;
   currentGame: GameData | null;
 }
 
 function computeDuration(clips: ClipData[]): number {
-  if (clips.length) {
-    return Math.max(...clips.map(c => (c.offsetSec || 0) + c.durationSec));
-  }
-  return 0;
+  if (!clips.length) return 0;
+  return computeClipsDuration(clips);
 }
 
-function getSnapPoints(clips: ClipData[], subs: SubtitleData[], stats: StatData[], type: string, excludeIdx: number, dur: number, trackW: number): number[] {
+function getSnapPoints(clips: ClipData[], subs: SubtitleData[], stats: StatData[], voiceover: VoiceoverData[], type: string, excludeIdx: number, dur: number, trackW: number): number[] {
   const pxPerSec = trackW / dur;
   const points = [0];
-  clips.forEach((c, i) => {
+  const resolved = resolveClipLayout(clips);
+  resolved.forEach((c, i) => {
     if (type === 'clip' && i === excludeIdx) return;
-    const start = (c.offsetSec ?? 0) * pxPerSec;
-    const end = ((c.offsetSec ?? 0) + c.durationSec) * pxPerSec;
+    const start = c.offsetSec * pxPerSec;
+    const end = (c.offsetSec + c.durationSec) * pxPerSec;
     points.push(start, end);
   });
   subs.forEach((s, i) => {
@@ -42,6 +44,10 @@ function getSnapPoints(clips: ClipData[], subs: SubtitleData[], stats: StatData[
   stats.forEach((s, i) => {
     if (type === 'stat' && i === excludeIdx) return;
     points.push(s.startSec * pxPerSec, (s.startSec + s.durationSec) * pxPerSec);
+  });
+  voiceover.forEach((v, i) => {
+    if (type === 'voiceover' && i === excludeIdx) return;
+    points.push(v.offsetSec * pxPerSec);
   });
   return [...new Set(points)];
 }
@@ -56,7 +62,7 @@ function applySnap(px: number, snapPoints: number[], threshold: number): number 
   return minDist <= threshold ? closest : px;
 }
 
-export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubtitlesChange, onStatsChange, onSave, onRefresh, currentGame }: Props) {
+export function TimelineEditor({ clips, subtitles, stats, voiceover, onClipsChange, onSubtitlesChange, onStatsChange, onVoiceoverChange, onSave, onRefresh, currentGame }: Props) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [zoom, setZoom] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -67,8 +73,9 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
   const wrapperRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const dur = computeDuration(clips);
-  const totalFrames = Math.max(1, Math.round(dur * FPS));
+  const dur = useMemo(() => computeDuration(clips), [clips]);
+  const totalFrames = useMemo(() => Math.max(1, Math.round(dur * FPS)), [dur]);
+  const resolvedClips = useMemo(() => resolveClipLayout(clips), [clips]);
 
   const seekToTime = useCallback((t: number) => {
     const p = playerRef.current;
@@ -147,7 +154,7 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
     seekToTime(t);
   }, [dur, seekToTime]);
 
-  const handleBarMouseDown = useCallback((e: React.MouseEvent, idx: number, type: 'clip' | 'subtitle' | 'stat') => {
+  const handleBarMouseDown = useCallback((e: React.MouseEvent, idx: number, type: 'clip' | 'subtitle' | 'stat' | 'voiceover') => {
     if ((e.target as HTMLElement).classList.contains('timeline-handle')) return;
     e.preventDefault();
     const bar = e.currentTarget as HTMLElement;
@@ -156,13 +163,14 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
     const trackW = track.offsetWidth;
     const startX = e.clientX;
     const startLeft = parseFloat(bar.style.left) / 100 * trackW;
-    const snapPoints = getSnapPoints(clips, subtitles, stats, type, idx, dur, trackW);
+    const snapPoints = getSnapPoints(clips, subtitles, stats, voiceover, type, idx, dur, trackW);
 
     const onMove = (e2: MouseEvent) => {
       const dx = e2.clientX - startX;
       let newLeft = Math.max(0, startLeft + dx);
       const itemDur = type === 'clip' ? clips[idx].durationSec
-        : type === 'subtitle' ? subtitles[idx].durationSec : stats[idx].durationSec;
+        : type === 'subtitle' ? subtitles[idx].durationSec
+        : type === 'stat' ? stats[idx].durationSec : 1;
       const rightPx = newLeft + itemDur * (trackW / dur);
       const snappedLeft = applySnap(newLeft, snapPoints, SNAP_PX);
       const snappedRight = applySnap(rightPx, snapPoints, SNAP_PX);
@@ -174,24 +182,29 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
       newLeft = Math.max(0, newLeft);
       const newSec = Math.round(newLeft / trackW * dur * 10) / 10;
       bar.style.left = (newSec / dur * 100) + '%';
-      if (type === 'clip') {
-        const next = [...clips]; next[idx] = { ...next[idx], offsetSec: newSec }; onClipsChange(next);
-      } else if (type === 'subtitle') {
-        const next = [...subtitles]; next[idx] = { ...next[idx], startSec: newSec }; onSubtitlesChange(next);
-      } else {
-        const next = [...stats]; next[idx] = { ...next[idx], startSec: newSec }; onStatsChange(next);
-      }
+      bar.dataset.pendingSec = String(newSec);
     };
     const onUp = () => {
       bar.classList.remove('dragging');
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      const finalSec = parseFloat(bar.dataset.pendingSec ?? '0');
+      delete bar.dataset.pendingSec;
+      if (type === 'clip') {
+        const next = [...clips]; next[idx] = { ...next[idx], offsetSec: finalSec }; onClipsChange(next);
+      } else if (type === 'subtitle') {
+        const next = [...subtitles]; next[idx] = { ...next[idx], startSec: finalSec }; onSubtitlesChange(next);
+      } else if (type === 'voiceover') {
+        const next = [...voiceover]; next[idx] = { ...next[idx], offsetSec: finalSec }; onVoiceoverChange(next);
+      } else {
+        const next = [...stats]; next[idx] = { ...next[idx], startSec: finalSec }; onStatsChange(next);
+      }
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-  }, [clips, subtitles, stats, dur, onClipsChange, onSubtitlesChange, onStatsChange]);
+  }, [clips, subtitles, stats, voiceover, dur, onClipsChange, onSubtitlesChange, onStatsChange, onVoiceoverChange]);
 
-  const handleEdgeDrag = useCallback((e: React.MouseEvent, idx: number, type: 'clip' | 'subtitle' | 'stat', side: 'left' | 'right') => {
+  const handleEdgeDrag = useCallback((e: React.MouseEvent, idx: number, type: 'clip' | 'subtitle' | 'stat' | 'voiceover', side: 'left' | 'right') => {
     e.preventDefault();
     e.stopPropagation();
     const handle = e.currentTarget as HTMLElement;
@@ -203,9 +216,11 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
     const pxPerSec = trackW / dur;
     const startX = e.clientX;
 
-    const item = type === 'clip' ? { ...clips[idx] } : type === 'subtitle' ? { ...subtitles[idx] } : { ...stats[idx] };
-    const origOffset = type === 'clip' ? (item as ClipData).offsetSec ?? 0 : (item as SubtitleData).startSec;
+    const item = type === 'clip' ? { ...clips[idx] } : type === 'subtitle' ? { ...subtitles[idx] } : type === 'voiceover' ? { ...voiceover[idx], durationSec: 1 } : { ...stats[idx] };
+    const origOffset = type === 'clip' ? (resolvedClips[idx]?.offsetSec ?? 0) : type === 'voiceover' ? (item as VoiceoverData).offsetSec : (item as SubtitleData).startSec;
     const origDur = item.durationSec;
+    let pendingOffset = origOffset;
+    let pendingDur = origDur;
 
     const onMove = (e2: MouseEvent) => {
       const dx = e2.clientX - startX;
@@ -215,29 +230,13 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
         const maxDelta = origDur - 0.1;
         const delta = Math.max(-origOffset, Math.min(maxDelta, deltaSec));
         const roundDelta = Math.round(delta * 10) / 10;
-        const newDur = Math.max(0.1, origDur - roundDelta);
-        if (type === 'clip') {
-          const next = [...clips];
-          next[idx] = { ...next[idx], offsetSec: Math.round((origOffset + roundDelta) * 10) / 10, durationSec: Math.round(newDur * 10) / 10 };
-          onClipsChange(next);
-        } else if (type === 'subtitle') {
-          const next = [...subtitles];
-          next[idx] = { ...next[idx], startSec: Math.round((origOffset + roundDelta) * 10) / 10, durationSec: Math.round(newDur * 10) / 10 };
-          onSubtitlesChange(next);
-        } else {
-          const next = [...stats];
-          next[idx] = { ...next[idx], startSec: Math.round((origOffset + roundDelta) * 10) / 10, durationSec: Math.round(newDur * 10) / 10 };
-          onStatsChange(next);
-        }
+        pendingOffset = Math.round((origOffset + roundDelta) * 10) / 10;
+        pendingDur = Math.max(0.1, Math.round((origDur - roundDelta) * 10) / 10);
+        bar.style.left = (pendingOffset / dur * 100) + '%';
+        bar.style.width = (pendingDur / dur * 100) + '%';
       } else {
-        const newDur = Math.max(0.1, origDur + deltaSec);
-        if (type === 'clip') {
-          const next = [...clips]; next[idx] = { ...next[idx], durationSec: Math.round(newDur * 10) / 10 }; onClipsChange(next);
-        } else if (type === 'subtitle') {
-          const next = [...subtitles]; next[idx] = { ...next[idx], durationSec: Math.round(newDur * 10) / 10 }; onSubtitlesChange(next);
-        } else {
-          const next = [...stats]; next[idx] = { ...next[idx], durationSec: Math.round(newDur * 10) / 10 }; onStatsChange(next);
-        }
+        pendingDur = Math.max(0.1, Math.round((origDur + deltaSec) * 10) / 10);
+        bar.style.width = (pendingDur / dur * 100) + '%';
       }
     };
     const onUp = () => {
@@ -245,10 +244,33 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
       bar.classList.remove('dragging');
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      if (type === 'clip') {
+        const next = [...clips];
+        next[idx] = side === 'left'
+          ? { ...next[idx], offsetSec: pendingOffset, durationSec: pendingDur }
+          : { ...next[idx], durationSec: pendingDur };
+        onClipsChange(next);
+      } else if (type === 'subtitle') {
+        const next = [...subtitles];
+        next[idx] = side === 'left'
+          ? { ...next[idx], startSec: pendingOffset, durationSec: pendingDur }
+          : { ...next[idx], durationSec: pendingDur };
+        onSubtitlesChange(next);
+      } else if (type === 'voiceover') {
+        const next = [...voiceover];
+        next[idx] = { ...next[idx], offsetSec: pendingOffset };
+        onVoiceoverChange(next);
+      } else {
+        const next = [...stats];
+        next[idx] = side === 'left'
+          ? { ...next[idx], startSec: pendingOffset, durationSec: pendingDur }
+          : { ...next[idx], durationSec: pendingDur };
+        onStatsChange(next);
+      }
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-  }, [clips, subtitles, stats, dur, onClipsChange, onSubtitlesChange, onStatsChange]);
+  }, [clips, subtitles, stats, voiceover, resolvedClips, dur, onClipsChange, onSubtitlesChange, onStatsChange, onVoiceoverChange]);
 
   const handleSave = async () => {
     setSaveState('saving');
@@ -294,7 +316,7 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
         <Player
           ref={playerRef}
           component={ClipPreview}
-          inputProps={{ clips, subtitles, stats } satisfies ClipPreviewProps}
+          inputProps={{ clips, subtitles, stats, voiceover } satisfies ClipPreviewProps}
           durationInFrames={totalFrames}
           compositionWidth={1920}
           compositionHeight={1080}
@@ -323,19 +345,18 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
         <div ref={tracksRef}>
           {/* Clip track */}
           <div className="timeline-track" title="切片轨" style={{ background: '#0d0d12' }}>
-            {clips.map((c, i) => {
-              const offset = c.offsetSec || 0;
-              const name = c.src.split('/').pop();
-              return (
-                <div key={i} className="timeline-bar clip"
-                  style={{ left: dur > 0 ? (offset / dur * 100) + '%' : '0%', width: dur > 0 ? (c.durationSec / dur * 100) + '%' : '0%' }}
-                  title={`${name} [offset=${offset}s, dur=${c.durationSec}s]`}
-                  onMouseDown={e => handleBarMouseDown(e, i, 'clip')}>
-                  {name}
-                  <div className="timeline-handle timeline-handle-left" onMouseDown={e => handleEdgeDrag(e, i, 'clip', 'left')} />
-                  <div className="timeline-handle timeline-handle-right" onMouseDown={e => handleEdgeDrag(e, i, 'clip', 'right')} />
-                </div>
-              );
+            {resolvedClips.map((c, i) => {
+                const name = c.src.split('/').pop();
+                return (
+                  <div key={i} className="timeline-bar clip"
+                    style={{ left: dur > 0 ? (c.offsetSec / dur * 100) + '%' : '0%', width: dur > 0 ? (c.durationSec / dur * 100) + '%' : '0%' }}
+                    title={`${name} [offset=${c.offsetSec.toFixed(1)}s, dur=${c.durationSec}s]`}
+                    onMouseDown={e => handleBarMouseDown(e, i, 'clip')}>
+                    {name}
+                    <div className="timeline-handle timeline-handle-left" onMouseDown={e => handleEdgeDrag(e, i, 'clip', 'left')} />
+                    <div className="timeline-handle timeline-handle-right" onMouseDown={e => handleEdgeDrag(e, i, 'clip', 'right')} />
+                  </div>
+                );
             })}
           </div>
           {/* Subtitle track */}
@@ -364,6 +385,22 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
                   <div className="timeline-handle timeline-handle-right" onMouseDown={e => handleEdgeDrag(e, i, 'stat', 'right')} />
                 </div>
               ))}
+            </div>
+          )}
+          {/* Voiceover track */}
+          {voiceover.length > 0 && (
+            <div className="timeline-track" title="配音轨" style={{ background: '#0a100d' }}>
+              {voiceover.map((vo, i) => {
+                const voDur = i < voiceover.length - 1 ? voiceover[i + 1].offsetSec - vo.offsetSec : dur - vo.offsetSec;
+                return (
+                <div key={i} className="timeline-bar voiceover"
+                  style={{ left: dur > 0 ? (vo.offsetSec / dur * 100) + '%' : '0%', width: dur > 0 ? (Math.max(0.5, voDur) / dur * 100) + '%' : '0%' }}
+                  title={`${vo.text} [${vo.offsetSec}s]`}
+                  onMouseDown={e => handleBarMouseDown(e, i, 'voiceover')}>
+                  {vo.text}
+                </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -405,6 +442,28 @@ export function TimelineEditor({ clips, subtitles, stats, onClipsChange, onSubti
           ))}
         </div>
       </div>
+
+      {/* Voiceover */}
+      {voiceover.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <label>配音</label>
+          <div>
+            {voiceover.map((vo, i) => (
+              <div key={i} className="sub-item">
+                <div className="timing-row">
+                  <span style={{ flex: 1, fontSize: 13, color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vo.text}</span>
+                  <span style={{ fontSize: 11, color: '#666', flexShrink: 0 }}>{vo.src.split('/').pop()}</span>
+                </div>
+                <div className="timing-row" style={{ marginTop: 4 }}>
+                  <label>偏移</label>
+                  <input className="timing-input" type="number" step={0.1} min={0} value={vo.offsetSec}
+                    onChange={e => { const next = [...voiceover]; next[i] = { ...next[i], offsetSec: +e.target.value }; onVoiceoverChange(next); }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ marginTop: 16 }}>

@@ -1,7 +1,7 @@
 ---
 name: top5-video
 description: "Top 5 Remotion video generator agent. Use when: creating Top 5 countdown videos, generating content.config.yaml, downloading/cutting video clips for a specific rank, writing subtitles and stats, modifying Remotion components. Keywords: top5, remotion, rank, clip, subtitle, stat, yaml, yt-dlp, ffmpeg, countdown"
-tools: [execute, read, agent, edit, search, 'cunzhi1/*', 'cunzhi2/*', 'cunzhi3/*', firecrawl/firecrawl-mcp-server/firecrawl_scrape, 'gemini-media/*', io.github.tavily-ai/tavily-mcp/tavily_search, todo]
+tools: [execute/testFailure, execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, agent, edit, search, 'cunzhi1/*', 'cunzhi2/*', 'cunzhi3/*', firecrawl/firecrawl-mcp-server/firecrawl_scrape, 'gemini-media/*', io.github.tavily-ai/tavily-mcp/tavily_search, todo]
 ---
 
 # Top 5 Remotion Video Generator
@@ -41,75 +41,93 @@ public/{folder}/      ← 视频切片存放目录
 1. 理解用户给定的 Top 5 主题（如"全球玩家最多的手游"）
 2. 确定 Top 5 排名（#5→#1，#1 最强）：通过 Tavily 搜索确认排名顺序和项目名称（中/英文）
 
-### Phase 2: 逐排名位处理（调研 → 选片 → 下载）
+### Phase 2: 调研 → 文案配音 → 选片
 
-对每个排名位，按顺序调用两个 subagent：
+分三个阶段处理：
 
-**Step A: `@content-researcher`（调研）**
+**阶段 A: 全部调研（`@content-researcher` × 5）**
 
-调研该排名位的所有信息，prompt 只需最少必要信息：
+对每个排名位调用 `@content-researcher`，prompt 只需最少必要信息：
 
 ```
 主题：{topic}
 排名位：#{rank} — {titleEn} ({titleZh})
 ```
 
-`@content-researcher` 自己知道完整流程（搜索数据/字幕/视频素材 → 下载低画质 → gemini 验证筛选），返回：
-- 核心 stat + 字幕文案初稿
+`@content-researcher` 自己知道完整流程（搜索数据/视频素材 → 下载低画质 → gemini 验证筛选），返回：
+- 核心 stat + 关键事实
 - 3-5 个经验证的视频 URL + 质量评分 + 亮点时间戳
 - 低画质视频文件保留在 temp_analysis/
 
-**Step B: `@clip-editor`（选片 + 下载 + YAML）**
+可并行调用，建议分两批：先 #5 和 #4，再 #3、#2、#1。
 
-将 content-researcher 的输出传给 clip-editor，使用以下固定格式：
+**阶段 B: 全部文案配音（`@copywriter` × 1）**
+
+全部调研完成后，将 5 个排名位的数据**一次性**传给 `@copywriter`：
 
 ```
+项目名：{project-name}
+
+#5 — {titleEn5} ({titleZh5})
+bgColor：{hex5}
+stat: {value5}
+调研摘要：{1-3 句关键事实}
+
+#4 — {titleEn4} ({titleZh4})
+bgColor：{hex4}
+stat: {value4}
+调研摘要：{...}
+
+#3 — {titleEn3} ({titleZh3})
+bgColor：{hex3}
+stat: {value3}
+调研摘要：{...}
+
+#2 — {titleEn2} ({titleZh2})
+bgColor：{hex2}
+stat: {value2}
+调研摘要：{...}
+
+#1 — {titleEn1} ({titleZh1})
+bgColor：{hex1}
+stat: {value1}
+调研摘要：{...}
+```
+
+`@copywriter` 一次性完成（读 style-reference → 写 5 段文案 → Fish Audio 逐个生成配音 → 测量时长 → 写 5 个 rank YAML），输出：
+- 5 个配音音频文件：`public/{folder}/voiceover.mp3`
+- 5 个 rank YAML 文件（含 voiceover、subtitles、stats，不含 clips）
+
+**阶段 C: 全部选片（`@clip-editor` × 5）**
+
+copywriter 完成后，对每个排名位调用 `@clip-editor`：
+
+```
+项目名：{project-name}
 排名位：#{rank} — {titleEn} ({titleZh})
-bgColor：{hex}
-目标时长：{N}s
-输出文件：projects/{project-name}/rank_{rank}_{kebab-titleEn}.yaml
+目标时长：{voiceover.durationSec}s
+rank YAML：projects/{project-name}/rank_{rank}_{kebab-titleEn}.yaml
 
 经验证视频：
 - temp_analysis/{filename1} | {url1} | {rating1}
 - temp_analysis/{filename2} | {url2} | {rating2}
 - ...
-
-stat: {value}（如 "704,000,000+"）
-字幕初稿：
-- {line1}
-- {line2}
-- {line3}
 ```
 
-`@clip-editor` 自己知道完整流程（gemini 精确选片 → 高画质下载 → 组装 YAML），输出一个完整的 rank YAML 文件。
+`@clip-editor` 自己知道完整流程（gemini 精确选片 → 高画质下载 → 将 clips 追加到已有的 rank YAML）。
 
-**执行策略**：分两批处理（避免 API rate limit）：
-- **第一批**：#5 和 #4（各自的 A→B 可并行）
-- **第二批**：#3、#2、#1（第一批完成后启动）
+可并行调用，建议分两批：先 #5 和 #4，再 #3、#2、#1。
 
 全部完成后进入 Phase 3。
 
 ### Phase 3: 合并生成 content.config.yaml
 
-读取 5 个 `rank_*.yaml` 文件，按 rank 排序（#5→#1），加上全局配置头，合并写入 `projects/{project-name}/content.config.yaml`：
+**必须严格按照 `template.content.config.yaml` 模板格式生成。** 先读取该模板文件了解完整结构。
 
-```yaml
-titleLine1: 全球人气
-titleLine2: 前五游戏
-watermark: ""
-fps: 60
-width: 1920
-height: 1080
-timing:
-  introDuration: 1.5
-  rankTransitionDuration: 2
-  titleCardDuration: 0
-  endingDuration: 0
-  gameplayDurations: [12, 12, 12, 12, 14]  # 每个排名位 = 最后一个 clip 的 offsetSec + durationSec（向上取整）
+读取 5 个 `rank_*.yaml` 文件，按 rank 排序（#5→#1），加上全局配置头，合并写入 `projects/{project-name}/content.config.yaml`。
 
-games:
-  # ← 依次拼接 rank_5_*.yaml, rank_4_*.yaml, ..., rank_1_*.yaml 的内容
-```
+- `gameplayDurations` = 每个排名位的配音总时长（向上取整到整数秒）
+- games 数组顺序：#5 → #4 → #3 → #2 → #1
 
 更新完 YAML 后：
 1. 将 YAML 写入 `projects/<kebab-case-topic>/content.config.yaml`

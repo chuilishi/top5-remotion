@@ -127,7 +127,6 @@ cinematic:
   rankTransition: { grain: 0.035, vignette: 0.25 }
   titleCard:      { grain: 0.030, vignette: 0.20 }
   gameplay:       { grain: 0.025, vignette: 0.15 }
-  ending:         { grain: 0.040, vignette: 0.30 }
 
 
 # ── 撕裂纸张效果 ────────────────────────────────────────

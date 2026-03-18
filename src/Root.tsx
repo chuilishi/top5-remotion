@@ -9,6 +9,21 @@ export const RemotionRoot: React.FC = () => {
   const data = contentConfig;
   const totalFrames = calculateTotalFrames(data);
 
+  const titleDefaults = data.games.reduce(
+    (acc, g) => {
+      acc[`第${6 - g.rank}名标题` as keyof typeof acc] = g.titleEn;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+  const statDefaults = data.games.reduce(
+    (acc, g) => {
+      acc[`第${6 - g.rank}名数值` as keyof typeof acc] = g.stats?.[0]?.value ?? "";
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+
   return (
     <>
       <Composition
@@ -45,11 +60,11 @@ export const RemotionRoot: React.FC = () => {
             阴影偏移Y: 9,
             光晕强度: 1,
             红色光晕半径: 22,
-            第5名标题: "PUBG Mobile",
-            第4名标题: "Subway Surfers",
-            第3名标题: "Minecraft",
-            第2名标题: "Candy Crush Saga",
-            第1名标题: "王者荣耀",
+            第5名标题: titleDefaults["第5名标题"] ?? "",
+            第4名标题: titleDefaults["第4名标题"] ?? "",
+            第3名标题: titleDefaults["第3名标题"] ?? "",
+            第2名标题: titleDefaults["第2名标题"] ?? "",
+            第1名标题: titleDefaults["第1名标题"] ?? "",
           },
           字幕: { 字号: 86, 底部距离: 68, 描边粗细: 16 },
           统计数字: {
@@ -57,13 +72,13 @@ export const RemotionRoot: React.FC = () => {
             倾斜角度: -6,
             水平缩放: 0.88,
             扩散系数: 0.29,
-            第5名数值: "146,000,000+",
-            第4名数值: "4,000,000,000+",
-            第3名数值: "300,000,000+",
-            第2名数值: "200,000,000+",
-            第1名数值: "100,000,000+",
+            第5名数值: statDefaults["第5名数值"] ?? "",
+            第4名数值: statDefaults["第4名数值"] ?? "",
+            第3名数值: statDefaults["第3名数值"] ?? "",
+            第2名数值: statDefaults["第2名数值"] ?? "",
+            第1名数值: statDefaults["第1名数值"] ?? "",
           },
-          水印: { 内容: "", 字号: 54 },
+          水印: { 内容: data.watermark || "", 字号: 54 },
         }}
         calculateMetadata={async () => ({
           durationInFrames: calculateTotalFrames(data),

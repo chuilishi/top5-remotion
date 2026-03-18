@@ -29,11 +29,10 @@ export function calculateTotalFrames(data: ContentConfig): number {
   const { timing, fps } = data;
   let totalSec = timing.introDuration;
   for (let i = 0; i < data.games.length; i++) {
-    totalSec += timing.rankTransitionDuration;
-    totalSec += timing.titleCardDuration;
+    totalSec += timing.rankTransitionDurations[i];
+    totalSec += timing.titleCardDurations[i];
     totalSec += timing.gameplayDurations[i];
   }
-  totalSec += timing.endingDuration;
   return Math.ceil(totalSec * fps);
 }
 
@@ -43,7 +42,7 @@ export function calculateTotalFrames(data: ContentConfig): number {
 export function calculateSegments(data: ContentConfig) {
   const { timing, fps } = data;
   const segments: Array<{
-    type: "intro" | "rankTransition" | "titleCard" | "gameplay" | "ending";
+    type: "intro" | "rankTransition" | "titleCard" | "gameplay";
     startFrame: number;
     durationFrames: number;
     gameIndex?: number;
@@ -56,11 +55,11 @@ export function calculateSegments(data: ContentConfig) {
   currentFrame += introFrames;
 
   for (let i = 0; i < data.games.length; i++) {
-    const transFrames = Math.round(timing.rankTransitionDuration * fps);
+    const transFrames = Math.round(timing.rankTransitionDurations[i] * fps);
     segments.push({ type: "rankTransition", startFrame: currentFrame, durationFrames: transFrames, gameIndex: i });
     currentFrame += transFrames;
 
-    const titleFrames = Math.round(timing.titleCardDuration * fps);
+    const titleFrames = Math.round(timing.titleCardDurations[i] * fps);
     segments.push({ type: "titleCard", startFrame: currentFrame, durationFrames: titleFrames, gameIndex: i });
     currentFrame += titleFrames;
 
@@ -68,9 +67,6 @@ export function calculateSegments(data: ContentConfig) {
     segments.push({ type: "gameplay", startFrame: currentFrame, durationFrames: gameplayFrames, gameIndex: i });
     currentFrame += gameplayFrames;
   }
-
-  const endingFrames = Math.round(timing.endingDuration * fps);
-  segments.push({ type: "ending", startFrame: currentFrame, durationFrames: endingFrames });
 
   return segments;
 }

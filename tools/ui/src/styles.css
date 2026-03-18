@@ -125,6 +125,7 @@ button { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 6
 .timeline-bar.subtitle { background: #3b82f6cc; }
 .timeline-bar.stat { background: #f59e0bcc; }
 .timeline-bar.clip { background: #22c55eaa; }
+.timeline-bar.voiceover { background: #a855f7cc; }
 .timeline-bar:hover { filter: brightness(1.2); }
 .timeline-bar.dragging { opacity: 0.7; cursor: grabbing; }
 .timeline-handle {

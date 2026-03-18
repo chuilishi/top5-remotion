@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { AbsoluteFill, Sequence } from "remotion";
 import { IntroScene } from "./components/IntroScene";
 import { RankTransition } from "./components/RankTransition";
 import { GameTitleCard } from "./components/GameTitleCard";
 import { GameplaySection } from "./components/GameplaySection";
-import { EndingScene } from "./components/EndingScene";
 import {
   contentConfig,
   calculateSegments,
@@ -14,7 +13,7 @@ import type { Top5Props } from "./schema";
 
 export const Top5Video: React.FC<Top5Props> = (props) => {
   const data = contentConfig;
-  const segments = calculateSegments(data);
+  const segments = useMemo(() => calculateSegments(data), [data]);
 
   const watermarkText = props.水印.内容;
 
@@ -31,7 +30,6 @@ export const Top5Video: React.FC<Top5Props> = (props) => {
       style={{
         backgroundColor: styleConfig.colors.globalBg,
         WebkitFontSmoothing: "antialiased",
-        // @ts-expect-error vendor prefix
         MozOsxFontSmoothing: "grayscale",
         textRendering: "optimizeLegibility",
       }}
@@ -177,17 +175,6 @@ export const Top5Video: React.FC<Top5Props> = (props) => {
               </Sequence>
             );
           }
-
-          case "ending":
-            return (
-              <Sequence
-                key={`ending-${idx}`}
-                from={seg.startFrame}
-                durationInFrames={seg.durationFrames}
-              >
-                <EndingScene watermark={watermarkText} watermarkFontSize={props.水印.字号} />
-              </Sequence>
-            );
 
           default:
             return null;

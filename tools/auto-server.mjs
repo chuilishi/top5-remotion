@@ -564,19 +564,26 @@ const server = http.createServer(async (req, res) => {
     let body = "";
     for await (const chunk of req) body += chunk;
     try {
-      const { rank, subtitles, stats, clips } = JSON.parse(body);
+      const { rank, subtitles, stats, clips, voiceover } = JSON.parse(body);
       const raw = existsSync(YAML_PATH) ? readFileSyncFs(YAML_PATH, "utf8") : "";
       const config = yaml.load(raw) || {};
       const game = config.games?.find((g) => g.rank === rank);
       if (game) {
         if (subtitles) game.subtitles = subtitles;
         if (stats) game.stats = stats;
+        if (voiceover) game.voiceover = voiceover;
         if (clips) {
           game.clips = clips;
-          const totalDur = Math.max(...clips.map(c => (c.offsetSec || 0) + c.durationSec));
+          let cum = 0, maxEnd = 0;
+          for (const c of clips) {
+            const start = c.offsetSec != null ? c.offsetSec : cum;
+            const end = start + c.durationSec;
+            if (end > maxEnd) maxEnd = end;
+            cum += c.durationSec;
+          }
           const idx = config.games.indexOf(game);
           if (config.timing?.gameplayDurations) {
-            config.timing.gameplayDurations[idx] = Math.round(totalDur);
+            config.timing.gameplayDurations[idx] = Math.round(maxEnd);
           }
         }
         writeFileSyncFs(YAML_PATH, yaml.dump(config, { lineWidth: -1, quotingType: '"', forceQuotes: false }), "utf8");

@@ -1,0 +1,72 @@
+# ╔══════════════════════════════════════════════════════════╗
+# ║  content.config.yaml 模板                               ║
+# ║  由 top5-video agent Phase 3 合并 5 个 rank YAML 生成    ║
+# ║  修改后运行: npm run project -- <project-name>           ║
+# ╚══════════════════════════════════════════════════════════╝
+
+titleLine1: ""           # 标题第一行（如 "全球搜索引擎"）
+titleLine2: ""           # 标题第二行（如 "TOP 5"）
+watermark: ""
+fps: 60
+width: 1920
+height: 1080
+timing:
+  introDuration: 1.5
+  rankTransitionDurations: [2, 2, 2, 2, 3]    # #1 额外悬念加长
+  titleCardDurations: [1.5, 1.5, 1.5, 1.5, 1.5]
+  # gameplayDurations = 每个排名位的配音总时长（向上取整到整数秒）
+  gameplayDurations: [20, 20, 20, 20, 20]      # REPLACE: 从各 rank YAML 计算
+
+# games 数组顺序: #5 → #4 → #3 → #2 → #1
+# 每个条目从对应的 rank YAML 文件复制（见 template.rank.yaml）
+games:
+  # ── rank_5_xxx.yaml 内容粘贴到这里 ──
+  - rank: 5
+    titleEn: ""
+    titleZh: ""
+    bgColor: "#333333"
+    voiceover: []        # 从 rank YAML 复制
+    subtitles: []        # 从 rank YAML 复制
+    stats: []            # 从 rank YAML 复制
+    clips: []            # 从 rank YAML 复制
+
+  # ── rank_4_xxx.yaml ──
+  - rank: 4
+    titleEn: ""
+    titleZh: ""
+    bgColor: "#333333"
+    voiceover: []
+    subtitles: []
+    stats: []
+    clips: []
+
+  # ── rank_3_xxx.yaml ──
+  - rank: 3
+    titleEn: ""
+    titleZh: ""
+    bgColor: "#333333"
+    voiceover: []
+    subtitles: []
+    stats: []
+    clips: []
+
+  # ── rank_2_xxx.yaml ──
+  - rank: 2
+    titleEn: ""
+    titleZh: ""
+    bgColor: "#333333"
+    voiceover: []
+    subtitles: []
+    stats: []
+    clips: []
+
+  # ── rank_1_xxx.yaml ──
+  - rank: 1
+    titleEn: ""
+    titleZh: ""
+    bgColor: "#333333"
+    voiceover: []
+    subtitles: []
+    stats: []
+    clips: []
+    clips: []

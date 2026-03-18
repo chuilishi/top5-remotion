@@ -1,11 +1,13 @@
-import React from 'react';
-import { AbsoluteFill, Sequence, Video, useVideoConfig } from 'remotion';
-import type { ClipData, SubtitleData, StatData } from '../types';
+import React, { useMemo } from 'react';
+import { AbsoluteFill, Audio, Sequence, Series, Video, useVideoConfig } from 'remotion';
+import type { ClipData, SubtitleData, StatData, VoiceoverData } from '../types';
+import { resolveClipLayout, computeClipsDuration, computeVoiceDurations } from '@top5/utils/timeline';
 
 export interface ClipPreviewProps {
   clips: ClipData[];
   subtitles: SubtitleData[];
   stats: StatData[];
+  voiceover: VoiceoverData[];
 }
 
 const SubtitleOverlay: React.FC<{ text: string }> = ({ text }) => (
@@ -53,44 +55,67 @@ const StatOverlay: React.FC<{ value: string }> = ({ value }) => (
   </div>
 );
 
-export const ClipPreview: React.FC<ClipPreviewProps> = ({ clips, subtitles, stats }) => {
+export const ClipPreview: React.FC<ClipPreviewProps> = ({ clips, subtitles, stats, voiceover }) => {
   const { fps } = useVideoConfig();
+
+  const resolved = useMemo(() => resolveClipLayout(clips), [clips]);
+  const gpDur = useMemo(() => computeClipsDuration(clips), [clips]);
+  const hasExplicitOffsets = useMemo(() => clips.some((c) => c.offsetSec != null), [clips]);
+  const voDurs = useMemo(
+    () => voiceover.length ? computeVoiceDurations(voiceover, gpDur) : [],
+    [voiceover, gpDur],
+  );
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#0a0a0f' }}>
-      {clips.map((clip, i) => {
-        const startFrame = Math.round((clip.offsetSec ?? 0) * fps);
-        const durFrames = Math.round(clip.durationSec * fps);
-        return (
-          <Sequence key={`clip-${i}`} from={startFrame} durationInFrames={durFrames} layout="none">
-            <AbsoluteFill>
-              <Video
-                src={`http://localhost:3456/public/${clip.src}`}
-                startFrom={clip.startFrom ? Math.round(clip.startFrom * fps) : 0}
-                volume={0}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </AbsoluteFill>
-          </Sequence>
-        );
-      })}
+      {hasExplicitOffsets
+        ? resolved.map((clip, i) => (
+            <Sequence key={`clip-${i}`} from={Math.round(clip.offsetSec * fps)} durationInFrames={Math.round(clip.durationSec * fps)} layout="none">
+              <AbsoluteFill>
+                <Video
+                  src={`http://localhost:3456/public/${clip.src}`}
+                  startFrom={Math.round(clip.startFrom * fps)}
+                  volume={0}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </AbsoluteFill>
+            </Sequence>
+          ))
+        : (
+          <Series>
+            {resolved.map((clip, i) => (
+              <Series.Sequence key={`clip-${i}`} durationInFrames={Math.round(clip.durationSec * fps)} layout="none">
+                <AbsoluteFill>
+                  <Video
+                    src={`http://localhost:3456/public/${clip.src}`}
+                    startFrom={Math.round(clip.startFrom * fps)}
+                    volume={0}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </AbsoluteFill>
+              </Series.Sequence>
+            ))}
+          </Series>
+        )}
 
-      {subtitles.map((sub, i) => {
-        const startFrame = Math.round(sub.startSec * fps);
-        const durFrames = Math.round(sub.durationSec * fps);
-        return (
-          <Sequence key={`sub-${i}`} from={startFrame} durationInFrames={durFrames} layout="none">
-            <SubtitleOverlay text={sub.text} />
-          </Sequence>
-        );
-      })}
+      {subtitles.map((sub, i) => (
+        <Sequence key={`sub-${i}`} from={Math.round(sub.startSec * fps)} durationInFrames={Math.round(sub.durationSec * fps)} layout="none">
+          <SubtitleOverlay text={sub.text} />
+        </Sequence>
+      ))}
 
-      {stats.map((stat, i) => {
-        const startFrame = Math.round(stat.startSec * fps);
-        const durFrames = Math.round(stat.durationSec * fps);
+      {stats.map((stat, i) => (
+        <Sequence key={`stat-${i}`} from={Math.round(stat.startSec * fps)} durationInFrames={Math.round(stat.durationSec * fps)} layout="none">
+          <StatOverlay value={stat.value} />
+        </Sequence>
+      ))}
+
+      {voiceover.map((vo, i) => {
+        const fromFrame = Math.round(vo.offsetSec * fps);
+        const durFrames = Math.max(1, Math.round((voDurs[i] ?? 10) * fps));
         return (
-          <Sequence key={`stat-${i}`} from={startFrame} durationInFrames={durFrames} layout="none">
-            <StatOverlay value={stat.value} />
+          <Sequence key={`vo-${i}`} from={fromFrame} durationInFrames={durFrames} layout="none">
+            <Audio src={`http://localhost:3456/public/${vo.src}`} volume={1} />
           </Sequence>
         );
       })}

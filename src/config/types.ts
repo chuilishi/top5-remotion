@@ -33,6 +33,15 @@ export interface VideoClip {
   paddedDurationSec?: number;
 }
 
+export interface VoiceoverClip {
+  /** 音频文件路径，相对于 public/ 文件夹 */
+  src: string;
+  /** 对应的旁白文案 */
+  text: string;
+  /** 在 gameplay 时间线上的起始位置(秒) */
+  offsetSec: number;
+}
+
 export interface GameItem {
   rank: number;
   titleEn: string;
@@ -40,6 +49,7 @@ export interface GameItem {
   subtitles: SubtitleLine[];
   stats?: StatDisplay[];
   clips?: VideoClip[];
+  voiceover?: VoiceoverClip[];
   /** 单视频兼容字段（旧方式），若同时提供了 clips 则优先 clips */
   videoSrc?: string;
   /** 无视频时的占位背景色 */
@@ -56,10 +66,10 @@ export interface ContentConfig {
   games: GameItem[];
   timing: {
     introDuration: number;
-    rankTransitionDuration: number;
-    titleCardDuration: number;
-    /** 结尾黑屏持续时间 */
-    endingDuration: number;
+    /** 每个排名的转场时长(秒)，数组长度 = games.length */
+    rankTransitionDurations: number[];
+    /** 每个排名的标题卡时长(秒)，数组长度 = games.length */
+    titleCardDurations: number[];
     /** 每个游戏的 gameplay 段总时长，应等于 clips[].durationSec 之和 */
     gameplayDurations: number[];
   };
@@ -168,7 +178,6 @@ export interface StyleConfig {
     rankTransition: { grain: number; vignette: number };
     titleCard: { grain: number; vignette: number };
     gameplay: { grain: number; vignette: number };
-    ending: { grain: number; vignette: number };
   };
 
   /** 撕裂纸张效果 */

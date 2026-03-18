@@ -1,7 +1,7 @@
 ---
 name: content-researcher
 description: "Deep content research agent. Use when: gathering materials, facts, data, quotes, copy, and video URLs for a given topic. Performs exhaustive search using Tavily and Firecrawl. Keywords: research, search, scrape, content, materials, facts, data, copywriting, video, youtube, bilibili"
-tools: [read, edit, execute, todo, io.github.tavily-ai/tavily-mcp/tavily_search, firecrawl/firecrawl-mcp-server/firecrawl_scrape, 'gemini-media/*']
+tools: [execute/runNotebookCell, execute/testFailure, execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, edit, firecrawl/firecrawl-mcp-server/firecrawl_scrape, 'gemini-media/*', io.github.tavily-ai/tavily-mcp/tavily_search, todo]
 ---
 
 # Content Researcher Agent
@@ -56,9 +56,9 @@ When the task involves finding video material for editing/clipping, follow this 
 #### Step B: Verify with gemini-media (MANDATORY before finalizing)
 
 13. **Pre-filter by metadata**: Review each candidate's title, description, channel type, and thumbnail. Immediately discard obvious mismatches (e.g., title contains "讲解/教程/PPT/reaction", channel is a talking-head vlogger, description indicates slideshow). No download needed for these.
-14. **Download surviving candidates**: For videos that pass the metadata filter, download low-quality previews:
+14. **Download surviving candidates**: For videos that pass the metadata filter, download low-quality previews to `temp_analysis/`:
     ```bash
-    yt-dlp -f worst --no-download-archive -o "%(id)s.%(ext)s" {urls...}
+    yt-dlp -f worst --no-download-archive -o "temp_analysis/%(id)s.%(ext)s" {urls...}
     ```
 15. **Batch analyze with gemini-media MCP**: Send the downloaded files to gemini-media with a prompt like:
     ```
@@ -79,8 +79,7 @@ When the task involves finding video material for editing/clipping, follow this 
 ### Synthesis Phase
 18. Organize all gathered content into the requested output format
 19. For each piece of content, include the source URL
-20. **Write draft copy**: When writing subtitles or copy, first read `docs/style-reference-scripts.txt` in the project root for style reference — it contains ~30 episodes of source video scripts in the target style. Study the tone, rhythm, and phrasing before writing.
-21. Flag any gaps where more research may be needed
+20. Flag any gaps where more research may be needed
 
 ## Constraints
 
@@ -99,6 +98,5 @@ A structured research package containing:
 1. **Topic overview**: 2-3 paragraph summary of the landscape
 2. **Key facts & statistics**: numbered list with sources
 3. **Notable quotes**: with attribution and context
-4. **Draft copy**: organized per the content brief's structure (e.g., scene-by-scene)
-5. **Video material**: verified URLs with quality ratings, standout timestamps, and low-quality files in temp_analysis/
-6. **Source list**: all URLs used
+4. **Video material**: verified URLs with quality ratings, standout timestamps, and low-quality files in temp_analysis/
+5. **Source list**: all URLs used
