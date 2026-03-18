@@ -9,6 +9,8 @@ tools/ui/dist/
 .current-project
 tools/.tmp/
 temp_analysis/
+temp_hq/
+bing/
 
 # Generated config (rebuild with: npm run config)
 src/config/content.config.ts
