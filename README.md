@@ -38,16 +38,16 @@ Define your content in a simple YAML file, drop in video clips, and render a pol
 
 ```
 top5-remotion/
-├── content.config.yaml      # 📝 Content: titles, ranks, clips, subtitles
 ├── style.config.yaml        # 🎨 Style: fonts, colors, animation params
 ├── projects/                # 📂 Multi-project support
 │   └── game-demo/
-│       └── content.config.yaml
+│       ├── project.yaml         # 📝 Global metadata (title, fps, timing)
+│       └── rank_*.yaml          # 🎮 Per-rank data (primary data source)
 ├── src/
 │   ├── Top5Video.tsx        # 🎬 Main composition
 │   └── components/
 │       ├── IntroScene.tsx       # Opening title sequence
-│       ├── GameTitleCard.tsx     # Rank title card with ambient glow
+│       ├── GameTitleCard.tsx     # Rank title overlay (appears on gameplay)
 │       ├── GameplaySection.tsx   # Fast-cut gameplay montage
 │       ├── RankTransition.tsx    # Animated rank transitions
 │       ├── CinematicOverlay.tsx  # Film grain + vignette + letterbox
@@ -81,10 +81,72 @@ Three services spin up:
 | Auto Server | `3456` | Download, clip, analyze API |
 | Editing UI | `5173` | Visual timeline editor |
 
-## 📝 Configuration
+## 🎬 Video Timeline
 
-### Content (`content.config.yaml`)
+Each video follows this structure (times are for reference, actual durations come from `project.yaml` + rank YAML files):
 
+```
+0s ──── Intro (开场标题) ──────────────────────────── ~2s
+        ├── Title text animation (titleLine1 + titleLine2)
+        ├── Watermark
+        └── BGM starts
+
+2s ──── #5 Rank Transition (排名转场) ────────────── ~2s
+        ├── Torn paper reveal effect
+        ├── Gold SVG number "5" with slide-in animation
+        └── "Number Five" audio (number_5.mp3)
+
+4s ──── #5 Gameplay (内容画面) ──────── BGM 4s beat ─ ~12-15s
+   │    ├── +0.0s: Video clips start (fast-cut montage)
+   │    ├── +0.4s: Brand voiceover ("Cocos Creator")
+   │    ├── +0.4s: Title overlay appears (1.5s duration)
+   │    ├── +1.2s: Main voiceover starts (0.8s after brand name)
+   │    ├── Subtitles synced to voiceover
+   │    ├── Stat number animation (synced to voiceover mention)
+   │    └── Cinematic overlay + watermark throughout
+
+~16s ── #4 Rank Transition ───────────────────────── ~2s
+~18s ── #4 Gameplay ──────────────────────────────── ~12-15s
+~30s ── #3 Rank Transition ───────────────────────── ~2s
+~32s ── #3 Gameplay ──────────────────────────────── ~12-15s
+~44s ── #2 Rank Transition ───────────────────────── ~2s
+~46s ── #2 Gameplay ──────────────────────────────── ~12-15s
+
+72s ─── #1 Rank Transition ──── BGM 72s beat ──────── ~3s
+        └── Extra suspense (longer transition for #1)
+
+75s ─── #1 Gameplay ──────────────────────────────── ~14-16s
+        └── Hard cut ending (no EndingScene)
+```
+
+### BGM Beat Sync
+
+Two mandatory sync points:
+- **4s** → #5 gameplay begins (`introDuration + rankTransitionDurations[0] = 4s`)
+- **72s** → #1 rank transition begins (sum of all segments before #1)
+
+### Gameplay Internal Timeline
+
+Within each gameplay segment:
+
+```
+0.0s ─── Video clips begin
+0.4s ─── Brand voiceover starts (brand_en.mp3 [+ brand_zh.mp3 for Type A])
+0.4s ─── Title overlay appears (lasts 1.5s)
+         ├── Type A: EN name + 0.3s gap + ZH name
+         └── Type B: single name only
+~1.5s ── Brand voiceover ends
+~2.3s ── Main voiceover begins (0.8s gap after brand)
+         ├── Sentences separated by 0.3s gaps
+         └── Stat number appears at voiceoverIndex
+~end ─── Buffer before next rank transition (0.5-3s)
+```
+
+
+
+### Content (`projects/{name}/project.yaml` + `rank_*.yaml`)
+
+**project.yaml** — Global metadata only:
 ```yaml
 titleLine1: 全球销量
 titleLine2: 前五咖啡
@@ -95,18 +157,18 @@ height: 1080
 timing:
   introDuration: 2
   rankTransitionDurations: [2, 2, 2, 2, 3]  # per rank; #1 gets extra suspense
-  titleCardDurations: [1.5, 1.5, 1.5, 1.5, 1.5]
-  gameplayDurations: [10, 10, 10, 10, 10]  # driven by voiceover duration
+  gameplayDurations: [10, 10, 10, 10, 10]    # driven by voiceover duration
+```
 
-games:
-  - rank: 5
-    titleEn: Nescafé
-    titleZh: 雀巢咖啡
-    bgColor: "#8B4513"    # ambient glow color
-    clips:
-      - src: nescafe/clip_001.mp4
-        startFrom: 0.5
-        durationSec: 1.5
+**rank_*.yaml** — Per-rank data (primary data source):
+```yaml
+rank: 5
+titleEn: Nescafé
+titleZh: 雀巢咖啡
+clips:
+  - src: nescafe/clip_001.mp4
+    startFrom: 0.5
+    durationSec: 1.5
 ```
 
 ### Style (`style.config.yaml`)
@@ -119,7 +181,7 @@ Controls fonts, colors, animation parameters, and visual effects — usually sta
 # List all projects
 npm run project -- --list
 
-# Switch to a project (copies YAML + rebuilds TS config)
+# Switch to a project (sets .current-project + rebuilds TS config)
 npm run project -- game-demo
 ```
 
@@ -139,8 +201,10 @@ npm run build:fast
 
 This project is designed to work with VS Code Copilot custom agents:
 
-- **`@top5-video`** — Orchestrates the full pipeline: research → download → clip → configure → render
-- **`@content-researcher`** — Deep web research for content, facts, and video material
+- **`@top5-video`** — Orchestrates the full pipeline: copywriting → research → TTS → clip → configure → render
+- **`@content-researcher`** — Deep web research for video material
+- **`@copywriter2`** — Chinese voiceover scripts in Sodabobo_ style (embedded reference)
+- **`@clip-editor`** — Precise video clip selection and cutting
 
 ## 📜 License
 
