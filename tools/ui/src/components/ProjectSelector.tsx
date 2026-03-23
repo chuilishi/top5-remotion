@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchProjects, switchProject, saveProject, type ProjectInfo } from '../api';
+import { fetchProjects, switchProject, type ProjectInfo } from '../api';
 
 interface Props {
   onSwitch: () => void;
@@ -31,15 +31,6 @@ export function ProjectSelector({ onSwitch }: Props) {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      await saveProject();
-      alert(`Saved to projects/${info.current}/`);
-    } catch (e) {
-      alert(`Save failed: ${e}`);
-    }
-  };
-
   if (info.projects.length === 0) return null;
 
   return (
@@ -56,14 +47,6 @@ export function ProjectSelector({ onSwitch }: Props) {
           <option key={p.name} value={p.name}>{p.name}</option>
         ))}
       </select>
-      {info.current && (
-        <button
-          onClick={handleSave}
-          style={{ padding: '4px 10px', borderRadius: 4, background: '#45475a', color: '#cdd6f4', border: 'none', fontSize: 12, cursor: 'pointer' }}
-        >
-          Save
-        </button>
-      )}
     </div>
   );
 }

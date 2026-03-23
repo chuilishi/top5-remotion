@@ -26,7 +26,7 @@ export function GameConfig({ rank, onRankChange, titleEn, titleZh, onTitleChange
         </select>
         {game && (
           <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
-            <span className="game-tag" style={{ background: game.bgColor || '#555', color: '#fff' }}>
+            <span className="game-tag" style={{ background: '#555', color: '#fff' }}>
               {game.titleEn}
             </span>{' '}
             {game.titleZh || ''}

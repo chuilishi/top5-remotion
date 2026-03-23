@@ -5,36 +5,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Tab Bar */
-.tab-bar {
-  position: sticky; top: 0; z-index: 100;
-  display: flex; gap: 0; background: #111118; border-bottom: 1px solid #22222e;
-  padding: 0 24px;
-}
-.tab-btn {
-  padding: 12px 24px; border-radius: 0; font-size: 14px; font-weight: 600;
-  cursor: pointer; border: none; background: transparent; color: #666;
-  border-bottom: 2px solid transparent; transition: all 0.15s;
-}
-.tab-btn:hover { color: #aaa; }
-.tab-btn.active { color: #ff4444; border-bottom-color: #ff4444; }
-
-/* Config Tab */
-.container { max-width: 800px; margin: 0 auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 16px; }
-
-/* Edit Tab - Full Width */
 .app-fullwidth { width: 100%; }
-.edit-container { display: flex; height: calc(100vh - 49px); overflow: hidden; }
+.edit-container { display: flex; height: 100vh; overflow: hidden; }
 .edit-sidebar {
   width: 280px; min-width: 280px; padding: 16px; overflow-y: auto;
   border-right: 1px solid #22222e; background: #111118;
 }
 .edit-main { flex: 1; padding: 16px; overflow-y: auto; }
 .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #555; font-size: 16px; }
-.header { text-align: center; padding: 12px 0 4px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.logo { font-size: 24px; filter: drop-shadow(0 0 8px #ff4444); }
-h1 { font-size: 20px; font-weight: 700; color: #fff; }
-.info-bar { background: #1a1a28; border: 1px solid #2a2a3a; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #888; line-height: 1.7; }
 .section { background: #16161e; border: 1px solid #22222e; border-radius: 12px; padding: 16px; }
 label { display: block; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
 .hint { font-size: 11px; color: #444; text-transform: none; letter-spacing: 0; font-weight: 400; }
@@ -71,42 +49,7 @@ button { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 6
 .btn-add:hover { background: #2563eb; }
 .btn-remove { background: transparent; color: #666; font-size: 16px; padding: 2px 6px; border: 1px solid #2a2a36; border-radius: 4px; cursor: pointer; line-height: 1; }
 .btn-remove:hover { color: #ff4444; border-color: #ff4444; }
-.collapse-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-.collapse-arrow { color: #555; font-size: 14px; transition: transform 0.2s; }
-.collapse-arrow.open { transform: rotate(90deg); }
 .game-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 8px; }
-
-/* URL Preview */
-.url-preview { margin-top: 8px; }
-.url-preview-header { font-size: 11px; color: #44cc44; margin-bottom: 6px; font-weight: 600; }
-.url-list { list-style: none; padding: 0; }
-.url-list li {
-  font-size: 12px; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-  padding: 4px 10px; margin: 3px 0; background: #0f0f16; border: 1px solid #1e2e1e;
-  border-radius: 6px; color: #7ab3ff; word-break: break-all; line-height: 1.5;
-  display: flex; align-items: center; gap: 8px;
-}
-.url-list li::before { content: "🔗"; font-size: 11px; flex-shrink: 0; }
-.url-list li a { color: #7ab3ff; text-decoration: none; }
-.url-list li a:hover { color: #aaccff; text-decoration: underline; }
-
-/* Log */
-.log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.log-header label { margin-bottom: 0; }
-.log-output {
-  background: #0a0a0d; border: 1px solid #1e1e28; border-radius: 8px; padding: 14px;
-  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 12px;
-  line-height: 1.7; max-height: 400px; overflow-y: auto; overflow-x: auto; color: #aaa; white-space: pre-wrap; word-break: break-all;
-}
-.log-line.info { color: #7ab3ff; }
-.log-line.success { color: #44cc44; }
-.log-line.error { color: #ff6666; }
-
-/* Result */
-#resultArea {
-  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; font-size: 12px;
-  line-height: 1.7; background: #0a0a0d; color: #7ab3ff; word-break: break-all;
-}
 
 /* Timeline Editor */
 .video-preview { width: 100%; border-radius: 8px; background: #000; max-height: 300px; }
