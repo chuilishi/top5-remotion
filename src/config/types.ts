@@ -15,6 +15,8 @@ export interface SubtitleLine {
 export interface StatDisplay {
   /** 大数字文本, 例如 "146,000,000+" */
   value: string;
+  /** 对应的 voiceover 条目序号 (1-based)，仅在 YAML 中用于 B+ 阶段填充时间 */
+  voiceoverIndex?: number;
   /** 相对于该游戏 gameplay 段开始的时间(秒) */
   startSec: number;
   durationSec: number;
@@ -40,6 +42,14 @@ export interface VoiceoverClip {
   text: string;
   /** 在 gameplay 时间线上的起始位置(秒) */
   offsetSec: number;
+  /** 音频时长(秒) */
+  durationSec: number;
+}
+
+export interface BrandVoiceoverClip {
+  src: string;
+  text: string;
+  durationSec: number;
 }
 
 export interface GameItem {
@@ -50,10 +60,8 @@ export interface GameItem {
   stats?: StatDisplay[];
   clips?: VideoClip[];
   voiceover?: VoiceoverClip[];
-  /** 单视频兼容字段（旧方式），若同时提供了 clips 则优先 clips */
+  brandVoiceover?: BrandVoiceoverClip[];
   videoSrc?: string;
-  /** 无视频时的占位背景色 */
-  bgColor?: string;
 }
 
 export interface ContentConfig {
@@ -68,8 +76,6 @@ export interface ContentConfig {
     introDuration: number;
     /** 每个排名的转场时长(秒)，数组长度 = games.length */
     rankTransitionDurations: number[];
-    /** 每个排名的标题卡时长(秒)，数组长度 = games.length */
-    titleCardDurations: number[];
     /** 每个游戏的 gameplay 段总时长，应等于 clips[].durationSec 之和 */
     gameplayDurations: number[];
   };
@@ -178,32 +184,6 @@ export interface StyleConfig {
     rankTransition: { grain: number; vignette: number };
     titleCard: { grain: number; vignette: number };
     gameplay: { grain: number; vignette: number };
-  };
-
-  /** 撕裂纸张效果 */
-  tornPaper: {
-    /** 撕裂高度占画面高度的比例 */
-    tearHeightRatio: number;
-    /** 撕裂边缘采样点数 (越大越细腻) */
-    edgeSteps: number;
-    /** 撕裂线锯齿幅度 (px) */
-    edgeAmplitude: number;
-    /** 裂缝内红色渐变色标 */
-    crackGradientColors: string[];
-    /** 纸张边缘色 (上方，从亮到暗) */
-    edgeTopColors: string[];
-    /** 纸张边缘色 (下方) */
-    edgeBottomColors: string[];
-    /** 投影模糊半径 */
-    shadowBlur: number;
-    /** 投影偏移 */
-    shadowOffset: number;
-    /** 投影不透明度 */
-    shadowOpacity: number;
-    /** 边缘线颜色 */
-    edgeLineColor: string;
-    /** 边缘线粗细 */
-    edgeLineWidth: number;
   };
 
   /** 开场标题动画 */

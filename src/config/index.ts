@@ -16,6 +16,7 @@ export type {
   SubtitleLine,
   StatDisplay,
   VideoClip,
+  BrandVoiceoverClip,
 } from "./types";
 
 // ──────────── 时间线计算工具 ────────────
@@ -30,7 +31,6 @@ export function calculateTotalFrames(data: ContentConfig): number {
   let totalSec = timing.introDuration;
   for (let i = 0; i < data.games.length; i++) {
     totalSec += timing.rankTransitionDurations[i];
-    totalSec += timing.titleCardDurations[i];
     totalSec += timing.gameplayDurations[i];
   }
   return Math.ceil(totalSec * fps);
@@ -42,7 +42,7 @@ export function calculateTotalFrames(data: ContentConfig): number {
 export function calculateSegments(data: ContentConfig) {
   const { timing, fps } = data;
   const segments: Array<{
-    type: "intro" | "rankTransition" | "titleCard" | "gameplay";
+    type: "intro" | "rankTransition" | "gameplay";
     startFrame: number;
     durationFrames: number;
     gameIndex?: number;
@@ -58,10 +58,6 @@ export function calculateSegments(data: ContentConfig) {
     const transFrames = Math.round(timing.rankTransitionDurations[i] * fps);
     segments.push({ type: "rankTransition", startFrame: currentFrame, durationFrames: transFrames, gameIndex: i });
     currentFrame += transFrames;
-
-    const titleFrames = Math.round(timing.titleCardDurations[i] * fps);
-    segments.push({ type: "titleCard", startFrame: currentFrame, durationFrames: titleFrames, gameIndex: i });
-    currentFrame += titleFrames;
 
     const gameplayFrames = Math.round(timing.gameplayDurations[i] * fps);
     segments.push({ type: "gameplay", startFrame: currentFrame, durationFrames: gameplayFrames, gameIndex: i });

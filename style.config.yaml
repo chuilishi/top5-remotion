@@ -18,7 +18,7 @@
 #
 fonts:
   # 大标题 / 排名数字 — 最粗
-  title:     "'Noto Sans CJK SC', 'Noto Sans CJK TC', 'Poppins', 'Helvetica Neue', sans-serif"
+  title:     "'Source Han Sans SC', 'Noto Sans CJK SC', 'Noto Sans CJK TC', 'Poppins', 'Helvetica Neue', sans-serif"
   # 字幕 — 粗, 可换字体区分层次
   subtitle:  "'Noto Sans CJK SC', 'Noto Sans CJK TC', 'Poppins', 'Helvetica Neue', sans-serif"
   # 统计数字 — 等宽感更好
@@ -129,41 +129,12 @@ cinematic:
   gameplay:       { grain: 0.025, vignette: 0.15 }
 
 
-# ── 撕裂纸张效果 ────────────────────────────────────────
-tornPaper:
-  tearHeightRatio: 0.16         # 撕裂高度 = 画面高度 × 0.16
-  edgeSteps: 120                # 撕裂线采样点数 (越多越细腻, 性能开销越大)
-  edgeAmplitude: 22             # 撕裂线锯齿幅度 (px)
-
-  # 裂缝内红色渐变 (从左到右)
-  crackGradientColors:
-    - "#5a0000"
-    - "#200808"
-    - "#3a0505"
-    - "#1a0404"
-    - "#2a0808"
-    - "#5a0000"
-
-  # 纸张撕裂边缘色 (从亮面到暗面)
-  edgeTopColors:    ["#7a756a", "#a8a090", "#bab2a2", "#8a8575"]
-  edgeBottomColors: ["#7a756a", "#a8a090", "#bab2a2", "#8a8575"]
-
-  # 纸张投影
-  shadowBlur: 16                # 投影模糊半径
-  shadowOffset: 9               # 投影偏移
-  shadowOpacity: 0.85           # 投影不透明度
-
-  # 边缘线
-  edgeLineColor: "rgba(160,150,138,0.35)"
-  edgeLineWidth: 0.7
-
-
 # ── 开场标题动画参数 ────────────────────────────────────
 intro:
   fontSizeRatio: 0.175          # 字号 = width × ratio
   fontSizeMax: 338              # 字号上限 (px)
   lineGapRatio: 0.005           # 两行间距 = height × ratio（极小）
-  spreadRatio: 0.06             # 汇聚展开幅度 = width × ratio
+  spreadRatio: 0.18             # 汇聚展开幅度 = width × ratio
   shuffleSeed: 42               # 随机打散种子 (决定字符出现顺序)
   delayBase: 2                  # 首个字符延迟 (帧)
   delayInterval: 1.5            # 每个后续字符的间隔 (帧)
