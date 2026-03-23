@@ -8,10 +8,10 @@
  *   npm run project -- <project-name>
  *   npm run project -- --list
  *
- * 将 projects/<name>/content.config.yaml 复制到项目根目录，然后运行 build-config。
+ * 将活跃项目名写入 .current-project，然后运行 build-config。
  */
 
-import { readdirSync, copyFileSync, existsSync, statSync, writeFileSync } from "fs";
+import { readdirSync, existsSync, statSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
@@ -36,9 +36,7 @@ if (args.length === 0 || args[0] === "--list") {
   }
   console.log("Available projects:");
   for (const d of dirs) {
-    const hasConfig = existsSync(
-      resolve(projectsDir, d, "content.config.yaml")
-    );
+    const hasConfig = existsSync(resolve(projectsDir, d, "project.yaml"));
     console.log(`  ${hasConfig ? "●" : "○"} ${d}`);
   }
   process.exit(0);
@@ -46,14 +44,13 @@ if (args.length === 0 || args[0] === "--list") {
 
 const name = args[0];
 const projectDir = resolve(projectsDir, name);
-const configSrc = resolve(projectDir, "content.config.yaml");
+const projectYaml = resolve(projectDir, "project.yaml");
 
-if (!existsSync(configSrc)) {
-  console.error(`Error: projects/${name}/content.config.yaml not found.`);
+if (!existsSync(projectYaml)) {
+  console.error(`Error: projects/${name}/project.yaml not found.`);
   process.exit(1);
 }
 
-copyFileSync(configSrc, resolve(root, "content.config.yaml"));
 writeFileSync(resolve(root, ".current-project"), name, "utf8");
 console.log(`Switched to project: ${name}`);
 

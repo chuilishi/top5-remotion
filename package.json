@@ -8,26 +8,28 @@
     "prestart": "npm run config",
     "start": "npx remotion studio",
     "prebuild": "npm run config",
-    "build": "npx remotion render Top5Video out/video.mp4 --video-bitrate=6M",
-    "build:fast": "npx remotion render Top5Video out/video.mp4 --video-bitrate=6M --x264-preset=veryfast",
+    "build": "npx remotion render Top5Video out/video.mp4 --video-bitrate=10M --x264-preset=veryfast",
+    "build:fast": "npx remotion render Top5Video out/video.mp4 --video-bitrate=10M --x264-preset=veryfast",
     "build:stat-test": "npx remotion render StatNumberTest out/stat-test.mp4 --x264-preset=ultrafast",
     "upgrade": "npx remotion upgrade",
     "auto": "node tools/auto-server.mjs",
-    "dev": "node tools/dev.mjs"
+    "dev": "node tools/dev.mjs",
+    "relay": "node prompt-relay/server.mjs"
   },
   "dependencies": {
-    "@remotion/cli": "4.0.242",
-    "@remotion/player": "4.0.242",
-    "@remotion/zod-types": "^4.0.242",
+    "@remotion/cli": "4.0.438",
+    "@remotion/media": "^4.0.438",
+    "@remotion/player": "4.0.438",
+    "@remotion/zod-types": "4.0.438",
     "js-yaml": "^4.1.0",
     "prettier": "^3.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "remotion": "4.0.242",
-    "zod": "^3.22.3"
+    "remotion": "4.0.438",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@remotion/eslint-config": "4.0.242",
+    "@remotion/eslint-config": "4.0.438",
     "@types/react": "^18.3.12",
     "typescript": "^5.7.2"
   }

@@ -1,41 +1,47 @@
 # ╔══════════════════════════════════════════════════════════╗
 # ║  Rank YAML 模板 — 每个排名位一个文件                      ║
 # ║  文件名: projects/{project}/rank_{N}_{kebab-titleEn}.yaml ║
-# ║  阶段 B (@copywriter) 填写: voiceover, subtitles, stats  ║
+# ║  阶段 A (@top5-video) 填写: voiceover 文本, subtitles 文本, stats  ║
+# ║  阶段 B+ (fill-timeline.mjs) 自动填写: 所有时间字段        ║
 # ║  阶段 C (@clip-editor) 追加: clips                       ║
+# ║                                                          ║
+# ║  ⚠ LLM 不要写任何时间字段 (durationSec, offsetSec, startSec) ║
+# ║  ⚠ 这些字段由 fill-timeline.mjs 在 TTS 后自动添加          ║
 # ╚══════════════════════════════════════════════════════════╝
 
 rank: 5                        # 排名位 (5=最低, 1=最高)
 titleEn: ""                    # 英文名 (用于文件夹命名)
 titleZh: ""                    # 中文名 (用于配音/字幕)
-bgColor: "#333333"             # 主题色 (hex)
 
-# ── @copywriter 填写区域 ──────────────────────────────────
+# ── @top5-video 阶段 B+ 添加（品牌名配音）──────────────
+# 类型 A（有中文名）: brand_en.mp3 + brand_zh.mp3
+# 类型 B（仅英文名）: brand_en.mp3
+# → 只写 src + text，durationSec 由 fill-timeline 自动添加
+
+brandVoiceover:
+  - src: "{project}/{folder}/brand_en.mp3"
+    text: ""
+
+# ── @top5-video 填写区域 ──────────────────────────────
+# → 只写 src + text，时间字段由 fill-timeline 自动添加
+# ⚠ 每个条目只能是一个子句，禁止包含 ，；等分句标点（、不算）
+#   如 "A的骄傲，B的统治者" 必须拆成两个条目
 
 voiceover:
-  # 按标点切分，每句一个条目
-  # offsetSec = 上一句 offsetSec + 上一句 TTS 时长 + 0.3 (间隔)
   - src: "{project}/{folder}/vo_01.mp3"
     text: "REPLACE_ME"
-    offsetSec: 0.0
   - src: "{project}/{folder}/vo_02.mp3"
     text: "REPLACE_ME"
-    offsetSec: 0.0              # = 上一句 offset + TTS 时长 + 0.3
 
 subtitles:
-  # 屏幕字幕，≤15 字/条，可比 voiceover 条目多
+  # 与 voiceover 一一对应，文字相同
   - text: "REPLACE_ME"
-    startSec: 0.0
-    durationSec: 0.0
-  - text: "REPLACE_ME"
-    startSec: 0.0
-    durationSec: 0.0
 
 stats:
-  # 大数字展示，与某条字幕同步
-  - value: "0"
-    startSec: 0.0
-    durationSec: 0.0
+  # @top5-video 填写 value（展示用的数据，可带单位如 "40,000 门店" "120K Stars"，也可纯数字如 "70%" "1200000+"）
+  # voiceoverIndex / startSec / durationSec 由 fill-timeline 自动处理
+  - value: ""
+    voiceoverIndex: 2
 
 # ── @clip-editor 填写区域 ─────────────────────────────────
 # ╔══════════════════════════════════════════════════════════╗
