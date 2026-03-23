@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 out/
 tools/ui/dist/
+tools/ui/tsconfig.tsbuildinfo
 
 # Runtime/temp
 .current-project
@@ -19,9 +20,21 @@ src/config/style.config.ts
 # Video assets (too large for git)
 public/*/
 
+# Audio assets
+public/*.mp3
+
+# Stray downloads (agents sometimes download to root)
+*.mp4
+*.mp4.part
+*.mp4.ytdl
+
 # OS
 .DS_Store
 Thumbs.db
 
 # Secrets
 .env
+
+# TTS output
+projects/*/tts_output.txt
+projects/*/tts_batch.json
