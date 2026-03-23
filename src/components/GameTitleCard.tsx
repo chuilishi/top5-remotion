@@ -4,8 +4,8 @@ import {
   interpolate,
   useCurrentFrame,
   useVideoConfig,
-  OffthreadVideo,
   staticFile,
+  OffthreadVideo,
 } from "remotion";
 import { Watermark } from "./Watermark";
 import { CinematicOverlay } from "./CinematicOverlay";
@@ -27,6 +27,7 @@ const GTC_SS = 2;
 export const GameTitleCard: React.FC<{
   game: GameItem;
   watermark: string;
+  overlay?: boolean;
   skewX?: number;
   scaleX?: number;
   translateX?: number;
@@ -39,7 +40,8 @@ export const GameTitleCard: React.FC<{
   watermarkFontSize?: number;
 }> = ({
   game, watermark,
-  skewX = -8, scaleX = 0.85, translateX = 5,
+  overlay = false,
+  skewX = -8, scaleX = 0.85, translateX = 2,
   fontSizeMultiplier = 1.0,
   charPaddingOverride,
   shadowOffsetXOverride,
@@ -294,51 +296,55 @@ export const GameTitleCard: React.FC<{
   });
 
   return (
-    <AbsoluteFill>
-      {/* 背景 */}
-      <div
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          opacity: bgOpacity,
-        }}
-      >
-        {game.clips && game.clips.length > 0 ? (
-          <OffthreadVideo
-            src={staticFile(game.clips[0].src)}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : game.videoSrc ? (
-          <OffthreadVideo
-            src={staticFile(game.videoSrc)}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {!overlay && (
+        <>
+          {/* 背景 */}
           <div
             style={{
+              position: "absolute",
               width: "100%",
               height: "100%",
-              background: `
-                radial-gradient(ellipse at 30% 40%, ${game.bgColor || "#333"}dd, transparent 60%),
-                radial-gradient(ellipse at 70% 60%, ${game.bgColor || "#333"}99, transparent 50%),
-                ${styleConfig.colors.fallbackBg}
-              `,
+              opacity: bgOpacity,
+            }}
+          >
+            {game.clips && game.clips.length > 0 ? (
+              <OffthreadVideo
+                src={staticFile(game.clips[0].src)}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : game.videoSrc ? (
+              <OffthreadVideo
+                src={staticFile(game.videoSrc)}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: `
+                    radial-gradient(ellipse at 30% 40%, #333d, transparent 60%),
+                    radial-gradient(ellipse at 70% 60%, #33399, transparent 50%),
+                    ${styleConfig.colors.fallbackBg}
+                  `,
+                }}
+              />
+            )}
+          </div>
+
+          {/* 红色发光 */}
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              background: `radial-gradient(ellipse at center, rgba(255,60,10,${glowOpacity}) 0%, rgba(200,30,0,${glowOpacity * 0.3}) 35%, transparent 60%)`,
+              zIndex: 5,
             }}
           />
-        )}
-      </div>
-
-      {/* 红色发光 */}
-      <div
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          background: `radial-gradient(ellipse at center, rgba(255,60,10,${glowOpacity}) 0%, rgba(200,30,0,${glowOpacity * 0.3}) 35%, transparent 60%)`,
-          zIndex: 5,
-        }}
-      />
+        </>
+      )}
 
       {/* 标题 — Canvas 渲染 */}
       <div
@@ -348,7 +354,7 @@ export const GameTitleCard: React.FC<{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          zIndex: 10,
+          zIndex: overlay ? 60 : 10,
         }}
       >
         <canvas
@@ -363,14 +369,17 @@ export const GameTitleCard: React.FC<{
         />
       </div>
 
-      <CinematicOverlay
-        width={width}
-        height={height}
-        grainIntensity={cine.grain}
-        vignetteIntensity={cine.vignette}
-        zIndex={80}
-      />
-      <Watermark text={watermark} width={width} fontSizeOverride={watermarkFontSize} />
+      {!overlay && (
+        <>
+          <CinematicOverlay
+            width={width}
+            height={height}
+            vignetteIntensity={cine.vignette}
+            zIndex={80}
+          />
+          <Watermark text={watermark} width={width} fontSizeOverride={watermarkFontSize} />
+        </>
+      )}
     </AbsoluteFill>
   );
 };

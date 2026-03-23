@@ -5,12 +5,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
   Easing,
-  OffthreadVideo,
   staticFile,
   Sequence,
   Series,
   Audio,
   random,
+  OffthreadVideo,
 } from "remotion";
 import { Watermark } from "./Watermark";
 import { CinematicOverlay } from "./CinematicOverlay";
@@ -40,7 +40,9 @@ const Subtitle: React.FC<{
   const fontSize = fontSizeOverride ?? (sub.fontSize as number);
   const subBottom = bottomOverride ?? sub.bottom;
   const subStrokeWidth = strokeWidthOverride ?? sub.strokeWidth;
-  const canvasH = fontSize * 2.4;
+  const lines = text.split(/(?<=[，,；])/);
+  const lineHeight = fontSize * 1.4;
+  const canvasH = fontSize * 1.0 + lines.length * lineHeight;
 
   React.useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -54,45 +56,47 @@ const Subtitle: React.FC<{
     ctx.clearRect(0, 0, W, H);
 
     const cx = W / 2;
-    const cy = H / 2;
+    const totalTextH = lines.length * lineHeight * S;
+    const startY = H / 2 - totalTextH / 2 + lineHeight * S / 2;
     ctx.font = `900 ${fontSize * S}px ${fontFamily}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // Pass 1: 宽域柔和阴影（环境光遮蔽感）
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.55)";
-    ctx.shadowBlur = 36 * S;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.lineWidth = (subStrokeWidth + 6) * S;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "rgba(0,0,0,0.01)";
-    ctx.strokeText(text, cx, cy);
-    ctx.restore();
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      const ly = startY + li * lineHeight * S;
 
-    // Pass 2: 方向性硬阴影 + 描边（描边本身投射阴影）
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.9)";
-    ctx.shadowBlur = 14 * S;
-    ctx.shadowOffsetX = 2 * S;
-    ctx.shadowOffsetY = 5 * S;
-    ctx.lineWidth = subStrokeWidth * S;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = sub.strokeColor;
-    ctx.strokeText(text, cx, cy);
-    ctx.restore();
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 36 * S;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.lineWidth = (subStrokeWidth + 6) * S;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(0,0,0,0.01)";
+      ctx.strokeText(line, cx, ly);
+      ctx.restore();
 
-    // Pass 3: 干净描边覆盖（无阴影，确保边缘锐利）
-    ctx.lineWidth = subStrokeWidth * S;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = sub.strokeColor;
-    ctx.strokeText(text, cx, cy);
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.9)";
+      ctx.shadowBlur = 14 * S;
+      ctx.shadowOffsetX = 2 * S;
+      ctx.shadowOffsetY = 5 * S;
+      ctx.lineWidth = subStrokeWidth * S;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = sub.strokeColor;
+      ctx.strokeText(line, cx, ly);
+      ctx.restore();
 
-    // Pass 4: 白色填充
-    ctx.fillStyle = sub.color;
-    ctx.fillText(text, cx, cy);
-  }, [text, fontSize, fontFamily, width, canvasH, sub, subStrokeWidth]);
+      ctx.lineWidth = subStrokeWidth * S;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = sub.strokeColor;
+      ctx.strokeText(line, cx, ly);
+
+      ctx.fillStyle = sub.color;
+      ctx.fillText(line, cx, ly);
+    }
+  }, [text, fontSize, fontFamily, width, canvasH, sub, subStrokeWidth, lines, lineHeight]);
 
   return (
     <div
@@ -139,11 +143,9 @@ const StatNumber: React.FC<{
 
   const FONT_STAT = styleConfig.fonts.stat;
   const GOLD_GRADIENT_STOPS = styleConfig.colors.goldGradient;
-  const goldStroke = styleConfig.colors.goldStroke;
   const {
     fontSize: defaultStatFontSize,
     spreadRatio: defaultSpreadRatio,
-    strokeWidth: statStrokeWidth,
     charWidthRatios,
     charSpreadWeights,
   } = styleConfig.statNumber;
@@ -175,11 +177,16 @@ const StatNumber: React.FC<{
 
   const spread = frame <= expandEnd ? expandPhase : contractPhase;
 
+  const isCJK = (char: string) => /[\u4e00-\u9fff\u3400-\u4dbf]/.test(char);
+  const isLetter = (char: string) => /[a-zA-Z]/.test(char);
+
   // ── kerning 修正：不同字符类型用不同扩散权重 ──
   const getCharSpreadWeight = (char: string) => {
     if (char === ",") return charSpreadWeights.comma;
     if (char === "+" || char === "-") return charSpreadWeights.plusMinus;
     if (char === ".") return charSpreadWeights.dot;
+    if (isCJK(char)) return 0.5;
+    if (isLetter(char)) return 0.6;
     return charSpreadWeights.digit;
   };
 
@@ -204,12 +211,32 @@ const StatNumber: React.FC<{
     }
   );
 
-  // 计算每个字符的基础宽度（逗号/加号比数字窄）
+  // 计算每个字符的渲染字号（中文/字母缩小）
+  const getCharFontSize = (char: string) => {
+    if (isCJK(char)) return statFontSize * 0.88;
+    if (isLetter(char)) return statFontSize * 0.88;
+    return statFontSize;
+  };
+
+  // 用 canvas 精确测量字符宽度，附加间距
+  const measuredWidths = React.useMemo(() => {
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    const pad = statFontSize * 0.06;
+    const widths: Record<string, number> = {};
+    for (const ch of chars) {
+      if (!(ch in widths)) {
+        const fs = getCharFontSize(ch);
+        ctx.font = `900 ${fs}px ${FONT_STAT}`;
+        widths[ch] = ctx.measureText(ch).width + pad;
+      }
+    }
+    return widths;
+  }, [value, statFontSize, FONT_STAT]);
+
   const getCharWidth = (char: string) => {
-    if (char === ",") return statFontSize * charWidthRatios.comma;
-    if (char === "+" || char === "-") return statFontSize * charWidthRatios.plusMinus;
-    if (char === ".") return statFontSize * charWidthRatios.dot;
-    return statFontSize * charWidthRatios.digit;
+    return measuredWidths?.[char] ?? statFontSize * charWidthRatios.digit;
   };
 
   // 计算总宽度用于居中
@@ -343,6 +370,7 @@ const StatNumber: React.FC<{
             );
 
             const posX = charCenterX + extraOffset;
+            const cfs = getCharFontSize(char);
 
             return (
               <g key={i} opacity={charGlitch}>
@@ -353,7 +381,7 @@ const StatNumber: React.FC<{
                   textAnchor="middle"
                   fontFamily={FONT_STAT}
                   fontWeight={900}
-                  fontSize={statFontSize}
+                  fontSize={cfs}
                   fill="url(#stat-gold)"
                   opacity={0.6}
                   filter="url(#stat-char-glow)"
@@ -367,7 +395,7 @@ const StatNumber: React.FC<{
                   textAnchor="middle"
                   fontFamily={FONT_STAT}
                   fontWeight={900}
-                  fontSize={statFontSize}
+                  fontSize={cfs}
                   fill="url(#stat-gold)"
                   filter="url(#stat-shadow)"
                 >
@@ -380,7 +408,7 @@ const StatNumber: React.FC<{
                   textAnchor="middle"
                   fontFamily={FONT_STAT}
                   fontWeight={900}
-                  fontSize={statFontSize}
+                  fontSize={cfs}
                   fill="url(#stat-gold)"
                 >
                   {char}
@@ -393,7 +421,7 @@ const StatNumber: React.FC<{
                     textAnchor="middle"
                     fontFamily={FONT_STAT}
                     fontWeight={900}
-                    fontSize={statFontSize}
+                    fontSize={cfs}
                     fill={`rgba(255,240,180,${charFlash * 0.3})`}
                   >
                     {char}
@@ -420,8 +448,8 @@ const FallbackBg: React.FC<{ game: GameItem }> = ({ game }) => (
         width: "100%",
         height: "100%",
         background: `
-          radial-gradient(ellipse at 30% 40%, ${game.bgColor ?? "#333"}dd, transparent 60%),
-          radial-gradient(ellipse at 70% 60%, ${game.bgColor ?? "#333"}99, transparent 50%),
+          radial-gradient(ellipse at 30% 40%, #333d, transparent 60%),
+          radial-gradient(ellipse at 70% 60%, #33399, transparent 50%),
           ${styleConfig.colors.fallbackBg}
         `,
         display: "flex",
@@ -519,7 +547,7 @@ const MultiClipBackground: React.FC<{ game: GameItem }> = ({ game }) => {
     return <FallbackBg game={game} />;
   }
 
-  const resolved = resolveClipLayout(clips);
+  const resolved = React.useMemo(() => resolveClipLayout(clips), [clips]);
   const hasExplicitOffsets = clips.some((c) => c.offsetSec != null);
 
   return (
@@ -645,6 +673,26 @@ export const GameplaySection: React.FC<{
         </Sequence>
       ))}
 
+      {game.brandVoiceover && (() => {
+        const brandStart = 0.4;
+        let bOff = brandStart;
+        return game.brandVoiceover.map((bv, i) => {
+          const fromFrame = Math.round(bOff * fps);
+          const durFrames = Math.max(1, Math.round(bv.durationSec * fps));
+          bOff += bv.durationSec + 0.3;
+          return (
+            <Sequence
+              key={`brand-vo-${i}`}
+              from={fromFrame}
+              durationInFrames={durFrames}
+              layout="none"
+            >
+              <Audio src={staticFile(bv.src)} volume={1} />
+            </Sequence>
+          );
+        });
+      })()}
+
       {game.voiceover && (() => {
         const gpDur = game.clips
           ? Math.max(...resolveClipLayout(game.clips).map((c) => c.offsetSec + c.durationSec))
@@ -669,7 +717,6 @@ export const GameplaySection: React.FC<{
       <CinematicOverlay
         width={width}
         height={height}
-        grainIntensity={cine.grain}
         vignetteIntensity={cine.vignette}
         zIndex={70}
       />

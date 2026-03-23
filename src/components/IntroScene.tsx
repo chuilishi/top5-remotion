@@ -4,9 +4,7 @@ import {
   interpolate,
   useCurrentFrame,
   useVideoConfig,
-  Easing,
 } from "remotion";
-import { TornPaperEffect } from "./TornPaperEffect";
 import { Watermark } from "./Watermark";
 import { CinematicOverlay } from "./CinematicOverlay";
 import { styleConfig } from "../config";
@@ -45,17 +43,17 @@ export const IntroScene: React.FC<{
   watermarkFontSize,
 }) => {
   const frame = useCurrentFrame();
-  const { width, height, durationInFrames } = useVideoConfig();
+  const { width, height } = useVideoConfig();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const FONT_TITLE = styleConfig.fonts.title;
   const GOLD_STOPS = styleConfig.colors.goldGradient;
   const glowColor = styleConfig.colors.glowColor;
   const {
-    spreadRatio,
     shuffleSeed,
     delayBase,
     delayInterval,
+    spreadRatio,
     shadowOffsetX,
     shadowOffsetY,
   } = styleConfig.intro;
@@ -80,18 +78,16 @@ export const IntroScene: React.FC<{
   }, [titleLine1, titleLine2]);
 
   const delays = useMemo(() => {
-    const n = chars.length;
-    const order = chars.map((_, i) => i);
-    const rand = (s: number) => {
-      const x = Math.sin(s * 9301 + 49297) * 233280;
-      return x - Math.floor(x);
-    };
-    for (let i = n - 1; i > 0; i--) {
-      const j = Math.floor(rand(i + shuffleSeed) * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    const delayMap = new Array(n).fill(0);
-    order.forEach((charIdx, orderPos) => {
+    const scored = chars.map((_char, i) => {
+      return {
+        charIdx: i,
+        score: prand(i * 17 + shuffleSeed),
+      };
+    });
+    scored.sort((a, b) => a.score - b.score);
+
+    const delayMap = new Array(chars.length).fill(0);
+    scored.forEach(({ charIdx }, orderPos) => {
       delayMap[charIdx] = delayBase + orderPos * delayInterval;
     });
     return delayMap;
@@ -99,19 +95,6 @@ export const IntroScene: React.FC<{
 
   const fontSize = introFontSize;
   const lineGap = introLineGap;
-
-  const convergeProgress = interpolate(
-    frame,
-    [0, durationInFrames * 0.85],
-    [0, 1],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.out(Easing.cubic),
-    },
-  );
-
-  const maxSpread = width * spreadRatio;
 
   const getCharW = (char: string) => {
     const isCJK = char.charCodeAt(0) > 0x2000;
@@ -138,12 +121,18 @@ export const IntroScene: React.FC<{
 
     const charH = fontSize * introCharHeight;
     const totalTextH = charH * 2 + lineGap;
-    const startY = (height - totalTextH) / 2;
+    const startY = (height - totalTextH) / 2 - 15;
     const line1Base = startY + fontSize;
     const line2Base = startY + charH + lineGap + fontSize;
 
     const line0 = chars.filter((c) => c.line === 0);
     const line1 = chars.filter((c) => c.line === 1);
+    const spacingExpand = interpolate(
+      frame,
+      [0, 4, 9, 16, 24, 30],
+      [1 + spreadRatio * 1.25, 1 + spreadRatio, 1 + spreadRatio * 0.6, 1 + spreadRatio * 0.26, 1.02, 1],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    );
 
     const drawLine = (
       lineChars: typeof chars,
@@ -151,61 +140,59 @@ export const IntroScene: React.FC<{
       baseY: number,
     ) => {
       const totalW = lineChars.reduce((s, c) => s + getCharW(c.char), 0);
-      let curX = (width - totalW) / 2;
+      const lineCenter = width / 2;
+      let curX = lineCenter - totalW / 2;
 
       for (let li = 0; li < lineChars.length; li++) {
         const ci = lineChars[li];
         const gi = globalOffset + li;
         const cw = getCharW(ci.char);
-        const charCenter = curX + cw / 2;
+        const finalCenter = curX + cw / 2;
         curX += cw;
 
         const delay = delays[gi];
 
-        const opacity = interpolate(
-          frame,
-          [
-            delay,
-            delay + 0.3,
-            delay + 0.5,
-            delay + 0.8,
-            delay + 1.0,
-            delay + 1.3,
-            delay + 1.8,
-            delay + 2.5,
-            delay + 3.5,
-            delay + 5,
-            delay + 7,
-          ],
-          [0, 0.85, 0, 0.7, 0, 0.9, 0.3, 0.85, 0.95, 0.98, 1.0],
+        const revealFrame = frame - delay;
+        const baseOpacity = interpolate(
+          revealFrame,
+          [0, 0.55, 1.1, 1.7, 2.4, 3.1, 4.1, 5.1, 6.4, 8.2, 10.2],
+          [0, 1, 0.08, 0.9, 0.14, 1, 0.22, 0.94, 0.5, 1, 1],
           { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
         );
-        if (opacity <= 0) continue;
+        const strobe =
+          revealFrame < 6.8
+            ? (prand(gi * 53 + Math.floor(Math.max(revealFrame, 0) * 2.2) + shuffleSeed) > 0.46 ? 1 : 0.22)
+            : 1;
+        const opacity = baseOpacity * strobe;
+        if (opacity <= 0.01) continue;
 
         const flash = interpolate(
-          frame,
-          [delay, delay + 0.3, delay + 0.8],
-          [0, 0.7, 0],
+          revealFrame,
+          [0, 0.45, 1.1, 1.9, 3.2, 4.8],
+          [0, 1, 0.35, 0.18, 0.08, 0],
           { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
         );
 
-        const gSeed = prand(gi * 31 + Math.floor(frame * 0.7));
-        const isG = frame >= delay && frame < delay + 4;
-        const gX = isG ? (gSeed - 0.5) * 14 : 0;
-
-        const cIdx = (ci.lineLength - 1) / 2;
-        const spX =
-          (ci.indexInLine - cIdx) * maxSpread * (1 - convergeProgress);
-
-        const fx = (charCenter + spX + gX) * S;
+        const startCenter = lineCenter + (finalCenter - lineCenter) * spacingExpand;
+        const fx = startCenter * S;
         const fy = baseY * S;
+
+        const grad = ctx.createLinearGradient(
+          0,
+          fy - fSize * 0.85,
+          0,
+          fy + fSize * 0.15,
+        );
+        for (const stop of GOLD_STOPS) {
+          grad.addColorStop(parseFloat(stop.offset) / 100, stop.color);
+        }
 
         ctx.save();
         ctx.globalAlpha = opacity;
         ctx.font = font;
 
         // 投影
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
         ctx.fillText(ci.char, fx + shadowOffsetX * S, fy + shadowOffsetY * S);
 
         // 出现瞬间的金色闪光
@@ -218,17 +205,6 @@ export const IntroScene: React.FC<{
           ctx.fillText(ci.char, fx, fy);
           ctx.restore();
           ctx.globalAlpha = opacity;
-        }
-
-        // 金色渐变
-        const grad = ctx.createLinearGradient(
-          0,
-          fy - fSize * 0.85,
-          0,
-          fy + fSize * 0.15,
-        );
-        for (const stop of GOLD_STOPS) {
-          grad.addColorStop(parseFloat(stop.offset) / 100, stop.color);
         }
 
         // 描边（paintOrder: stroke 等效 — 先描边再填充）
@@ -250,14 +226,7 @@ export const IntroScene: React.FC<{
   });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: styleConfig.colors.globalBg }}>
-      <TornPaperEffect
-        width={width}
-        height={height}
-        progress={1}
-        seed={1.5}
-      />
-
+    <AbsoluteFill>
       <div style={{ position: "absolute", inset: 0, zIndex: 50 }}>
         <canvas
           ref={canvasRef}
@@ -270,7 +239,6 @@ export const IntroScene: React.FC<{
       <CinematicOverlay
         width={width}
         height={height}
-        grainIntensity={cine.grain}
         vignetteIntensity={cine.vignette}
       />
       <Watermark text={watermark} width={width} fontSizeOverride={watermarkFontSize} />

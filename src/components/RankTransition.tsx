@@ -1,12 +1,13 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
   Easing,
 } from "remotion";
-import { TornPaperEffect } from "./TornPaperEffect";
 import { Watermark } from "./Watermark";
 import { CinematicOverlay } from "./CinematicOverlay";
 import { styleConfig } from "../config";
@@ -65,7 +66,7 @@ export const RankTransition: React.FC<{
   // 实心填充过渡（在后段快速从描边变为实心金色）
   const solidFillOpacity = interpolate(
     frame,
-    [durationInFrames * 0.55, durationInFrames * 0.72],
+    [durationInFrames * 0.70, durationInFrames * 0.80],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
@@ -156,14 +157,7 @@ export const RankTransition: React.FC<{
   );
 
   return (
-    <AbsoluteFill style={{ backgroundColor: styleConfig.colors.globalBg, opacity: exitOpacity }}>
-      <TornPaperEffect
-        width={width}
-        height={height}
-        progress={1}
-        seed={seedForRank}
-      />
-
+    <AbsoluteFill style={{ opacity: exitOpacity }}>
       <div
         style={{
           position: "absolute",
@@ -213,10 +207,10 @@ export const RankTransition: React.FC<{
       <CinematicOverlay
         width={width}
         height={height}
-        grainIntensity={cine.grain}
         vignetteIntensity={cine.vignette}
       />
       <Watermark text={watermark} width={width} fontSizeOverride={watermarkFontSize} />
+      <Audio src={staticFile(`number/number_${rank}.mp3`)} volume={1} />
     </AbsoluteFill>
   );
 };
