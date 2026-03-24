@@ -202,8 +202,8 @@ npm run build:fast
 This project is designed to work with VS Code Copilot custom agents:
 
 - **`@top5-video`** — Orchestrates the full pipeline: copywriting → research → TTS → clip → configure → render
-- **`@content-researcher`** — Deep web research for video material
-- **`@copywriter2`** — Chinese voiceover scripts in Sodabobo_ style (embedded reference)
+- **`@material-researcher`** — Deep web research for video material
+- **`@copywriter`** — Chinese voiceover scripts in Sodabobo_ style (no research data access)
 - **`@clip-editor`** — Precise video clip selection and cutting
 
 ## 📜 License

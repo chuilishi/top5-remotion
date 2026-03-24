@@ -47,11 +47,11 @@ rank YAML 是唯一数据源。修改数据只改 rank YAML，然后：
 
 5 个 VS Code Copilot agent（`.github/agents/`）：
 - `@top5-video` — 全流程编排（调度其他 agent）
-- `@content-researcher` — 素材调研（搜索视频素材 + 下载验证）
-- `@copywriter2` — 中文文案（内嵌 Sodabobo_ 风格参考 → 输出纯文本旁白）
+- `@material-researcher` — 素材调研（搜索视频素材 + 下载验证）
+- `@copywriter` — 中文文案（内嵌 Sodabobo_ 风格参考 → 纯凭风格直觉写作，不接触研究资料）
 - `@clip-editor` — 精确选片（Gemini 视频分析 → 高画质下载 → 切片）
 
-流程：用户提供排名 → copywriter2 → top5-video 填 YAML + 搜 stat → content-researcher × 5 → TTS → clip-editor × 5 → 合并渲染
+流程：用户提供排名 → copywriter → material-researcher × 5 调研 → top5-video 填 YAML + 搜 stat → TTS → clip-editor × 5 → 合并渲染
 
 ## 关键约束
 
