@@ -54,16 +54,16 @@ public/{folder}/      ← 视频切片存放目录
 
 分三个阶段处理：
 
-**阶段 A: 全部调研（`@content-researcher` × 5）**
+**阶段 A: 全部调研（`@material-researcher` × 5）**
 
-对每个排名位调用 `@content-researcher`：
+对每个排名位调用 `@material-researcher`：
 
 ```
 项目名：{project-name}
 排名位：#{rank} — {titleEn} ({titleZh})
 ```
 
-`@content-researcher` 自己知道完整流程（搜索数据/视频素材 → 下载低画质 → 截图目视验证筛选），返回：
+`@material-researcher` 自己知道完整流程（搜索数据/视频素材 → 下载低画质 → 截图目视验证筛选），返回：
 - 核心 stat + 关键事实
 - 3-5 个经验证的视频 URL + 质量评分 + 亮点时间戳
 - 低画质视频文件保留在 temp_analysis/

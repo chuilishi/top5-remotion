@@ -116,9 +116,9 @@ BBDown "{url2}" --work-dir "temp_analysis/" -q "1080P 高码率, 1080P 高清" -
 
 ```bash
 mkdir -p public/{projectName}/{folder} && \
-ffmpeg -ss {padStart1} -i temp_analysis/hq_{id1}.mp4 -t {padDur1} -c copy public/{projectName}/{folder}/clip_001.mp4 && \
-ffmpeg -ss {padStart2} -i temp_analysis/hq_{id2}.mp4 -t {padDur2} -c copy public/{projectName}/{folder}/clip_002.mp4 && \
-ffmpeg -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c copy public/{projectName}/{folder}/clip_003.mp4
+ffmpeg -y -ss {padStart1} -i temp_analysis/hq_{id1}.mp4 -t {padDur1} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{projectName}/{folder}/clip_001.mp4 && \
+ffmpeg -y -ss {padStart2} -i temp_analysis/hq_{id2}.mp4 -t {padDur2} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{projectName}/{folder}/clip_002.mp4 && \
+ffmpeg -y -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{projectName}/{folder}/clip_003.mp4
 # ... 所有 clip 拼接在一条命令中
 ```
 
@@ -126,8 +126,7 @@ ffmpeg -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c copy public
 - `{folder}` = kebab-case of titleEn（如 `baidu`、`google`、`yahoo`）
 - `{padStart}` = clip start_time - 0.5s，`{padDuration}` = clip duration + 1.0s
 - 命名：`clip_001.mp4`, `clip_002.mp4`, ...
-- `-c copy` 不重新编码，秒级完成
-- 如果 `-c copy` 切出的起始帧不精确（关键帧问题），改用 `-c:v libx264 -crf 18 -c:a aac` 重新编码
+- **必须重编码为 h264**（`-c:v libx264`），禁止用 `-c copy`。`-c copy` 会导致负 PTS 时间戳和编码混杂（av1/vp9/h264），Remotion compositor 无法正确提取帧
 - 0.5s 容差在 YAML 中通过 `startFrom: 0.5` 跳过
 - **严禁每个 clip 单独调用一次终端命令——必须合并为一条复合命令**
 

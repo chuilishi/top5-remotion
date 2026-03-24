@@ -1,8 +1,8 @@
 ---
-name: content-researcher
-description: "Deep content research agent. Use when: gathering materials, facts, data, quotes, copy, and video URLs for a given topic. Performs exhaustive search using tavily_search and firecrawl_scrape. Keywords: research, search, scrape, content, materials, facts, data, copywriting, video, youtube, bilibili"
+name: material-researcher
+description: "Deep material research agent. Use when: gathering materials, facts, data, quotes, copy, and video URLs for a given topic. Performs exhaustive search using tavily_search and firecrawl_scrape. Keywords: research, search, scrape, material, materials, facts, data, video, youtube, bilibili"
 tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, edit, todo]
-model: "Claude Sonnet 4.6"
+model: "GPT-5.4"
 ---
 
 # Content Researcher Agent
@@ -116,7 +116,8 @@ Tavily 是网页搜索，擅长找"人类已经整理好的知识"——文章�
 
 **直接淘汰**（不下载）：
 - 标题含 tutorial, how to, walkthrough, reaction, podcast, livestream, setup guide, explained, 教程, 教学
-- 时长 > 30min（讲座/播客/完整访谈）或 < 5s（片头 bumper）
+- **时长 > 60min 的视频一律淘汰**（硬性上限）；时长 > 30min 的视频除非有充分理由否则淘汰（讲座/播客/完整访谈）；< 5s（片头 bumper）也淘汰
+- **优先选短视频**（< 15min），视觉密度通常更高
 - 频道明显是解说/教程/meme/模板类，而非制作方或官方
 - 标题/频道暗示是 screencast、slides、PPT 演示
 
@@ -182,6 +183,7 @@ Get-ChildItem "temp_analysis/{topic}/*.mp4" | ForEach-Object {
 
 - **质量导向，不是数量导向。** 搜索到足够覆盖话题的高质量素材就停，不需要为凑次数做重复搜索。但也不要偷懒——如果搜索结果不理想或有明显空白，必须追加搜索直到填补。
 - Video material: 每个 item 最终提交 2-4 个经目视验证的视频
+- **单个视频时长不得超过 1 小时（硬性上限）**——尽量选短视频（< 15min），视觉密度高、下载快、分析效率高
 - **元数据预筛选是核心效率手段**——通过标题/播放量/时长就能淘汰大部分不适合的视频，减少不必要的下载和分析
 - **截图目视验证不可跳过**——通过元数据筛选的视频必须下载截图验证
 - 验证淘汰太多就换策略重新搜，不要降低质量标准

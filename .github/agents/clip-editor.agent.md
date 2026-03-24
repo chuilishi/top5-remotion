@@ -2,7 +2,7 @@
 name: clip-editor
 description: "Video clip editor for Top 5 videos. Use when: selecting precise clips from pre-verified videos, downloading high-quality segments, assembling rank YAML output. Takes verified video files + research data as input, outputs a complete rank YAML. Keywords: clip, cut, segment, ffmpeg, yt-dlp, gemini_video_analyze, timestamp, montage, fast-cut"
 tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, edit, todo]
-model: "Claude Sonnet 4.6"
+model: "GPT-5.4"
 ---
 
 # Clip Editor Agent
@@ -16,6 +16,14 @@ model: "Claude Sonnet 4.6"
 ```
 [排名转场 ~2s] → [内容画面（时长 = 配音时长）]
 ```
+
+**所有终端命令必须使用隔离模式**：
+1. `run_in_terminal(command, isBackground=true)` → 获得 terminal ID
+2. `get_terminal_output(id)` → 获取输出
+3. `kill_terminal(id)` → 立即清理
+
+严禁使用 `isBackground=false`——共享终端会导致输出污染。
+(gemini_video_analyze要花的时间可能挺久的)
 
 ### 风格要点
 
@@ -47,7 +55,7 @@ rank YAML：projects/{project-name}/rank_{rank}_{kebab}.yaml
 - **项目名**：用于 clip 存放路径前缀，如 `top5-search-engines`
 - **目标时长**：来自 copywriter 生成的配音时长，clips 总时长应接近此值
 - **rank YAML**：已存在的文件，含 voiceover/subtitles/stats（由 @copywriter 生成），你只需追加 clips
-- **经验证视频**：已下载到 temp_analysis/ 的低画质视频（经 content-researcher 截图目视确认画面质量达标）
+- **经验证视频**：已下载到 temp_analysis/ 的低画质视频（经 material-researcher 截图目视确认画面质量达标）
 
 ## Workflow
 
@@ -116,9 +124,9 @@ BBDown "{url2}" --work-dir "temp_analysis/" -q "1080P 高码率, 1080P 高清" -
 
 ```bash
 mkdir -p public/{project-name}/{folder} && \
-ffmpeg -ss {padStart1} -i temp_analysis/hq_{id1}.mp4 -t {padDur1} -c copy public/{project-name}/{folder}/clip_001.mp4 && \
-ffmpeg -ss {padStart2} -i temp_analysis/hq_{id2}.mp4 -t {padDur2} -c copy public/{project-name}/{folder}/clip_002.mp4 && \
-ffmpeg -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c copy public/{project-name}/{folder}/clip_003.mp4
+ffmpeg -y -ss {padStart1} -i temp_analysis/hq_{id1}.mp4 -t {padDur1} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_001.mp4 && \
+ffmpeg -y -ss {padStart2} -i temp_analysis/hq_{id2}.mp4 -t {padDur2} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_002.mp4 && \
+ffmpeg -y -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_003.mp4
 # ... 所有 clip 拼接在一条命令中
 ```
 
@@ -126,8 +134,7 @@ ffmpeg -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c copy public
 - `{folder}` = kebab-case of titleEn（如 `baidu`、`google`、`yahoo`）
 - `{padStart}` = clip start_time - 0.5s，`{padDuration}` = clip duration + 1.0s
 - 命名：`clip_001.mp4`, `clip_002.mp4`, ...
-- `-c copy` 不重新编码，秒级完成
-- 如果 `-c copy` 切出的起始帧不精确（关键帧问题），改用 `-c:v libx264 -crf 18 -c:a aac` 重新编码
+- **必须重编码为 h264**（`-c:v libx264`），禁止用 `-c copy`。`-c copy` 会导致负 PTS 时间戳和编码混杂（av1/vp9/h264），Remotion compositor 无法正确提取帧
 - 0.5s 容差在 YAML 中通过 `startFrom: 0.5` 跳过
 - **严禁每个 clip 单独调用一次终端命令——必须合并为一条复合命令**
 
@@ -149,6 +156,4 @@ ffmpeg -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c copy public
 
 - **gemini_video_analyze 限制：最多 9 个文件，总时长 < 1 小时。** 超过必须分批调用
 - 选片质量是第一优先级。宁可少选一个镜头也不要选一个画面平庸的镜头
-- 如果 gemini_video_analyze 返回的切片不够好，可以要求重新分析或调整选片参数
 - 确保所有切片文件都成功下载后再写 YAML
-- 用 todo list 追踪进度

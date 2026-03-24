@@ -12,6 +12,7 @@ tools/.tmp/
 temp_analysis/
 temp_hq/
 bing/
+remotion-src/
 
 # Generated config (rebuild with: npm run config)
 src/config/content.config.ts
@@ -34,6 +35,16 @@ Thumbs.db
 
 # Secrets
 .env
+cookies.json
+
+# Remotion temp
+.remotion-tmp/
+
+# Logs
+*.log
+
+# Misc temp
+.episode
 
 # TTS output
 projects/*/tts_output.txt

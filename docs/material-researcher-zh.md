@@ -1,6 +1,6 @@
 # 素材调研 Agent（中文参考版）
 
-> 这是 `content-researcher.agent.md` 的中文翻译，仅供阅读参考。实际 agent 使用的是英文原版。
+> 这是 `material-researcher.agent.md` 的中文翻译，仅供阅读参考。实际 agent 使用的是英文原版。
 
 ## 角色
 

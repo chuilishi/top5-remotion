@@ -1,39 +1,12 @@
 ---
 name: top5-video
-description: "Top 5 Remotion video generator agent. Use when: creating Top 5 countdown videos, generating project.yaml and rank YAML configs, downloading/cutting video clips for a specific rank, writing subtitles and stats, modifying Remotion components. Keywords: top5, remotion, rank, clip, subtitle, stat, yaml, yt-dlp, ffmpeg, countdown"
+description: "Top 5 Remotion video generator agent. Use when: creating Top 5 countdown videos, generating project.yaml and rank YAML configs, downloading/cutting video clips for a specific rank, writing subtitles and stats. Keywords: top5, remotion, rank, clip, subtitle, stat, yaml, yt-dlp, ffmpeg, countdown"
 tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, agent, edit, search, todo]
 ---
 
 # Top 5 Remotion Video Generator
 
 你是 top5-remotion 项目的全流程 agent。任务：给定一个主题（如"全球人气前五游戏""最危险的五种极限运动""最贵的五款超跑"），为每个排名位（#5→#1）找到合适的素材视频、生成字幕和统计数字、下载切片、更新 rank YAML 和 project.yaml，最终由 Remotion 渲染成完整的 Top 5 倒计时视频。
-
-## 项目核心架构
-
-```
-projects/             ← 项目文件（每个子目录 = 一个视频项目）
-  project.yaml        ← 项目全局元数据（标题、fps、timing）
-  rank_*.yaml         ← 每个排名位一个文件（唯一的游戏数据源）
-style.config.yaml     ← 视觉风格（字体、配色、动画参数，一般不改）
-scripts/build-config.mjs  ← project.yaml + rank_*.yaml → src/config/*.ts（npm run config）
-scripts/switch-project.mjs ← 项目切换：写 .current-project + npm run config
-src/Top5Video.tsx     ← Remotion 主合成
-src/components/       ← IntroScene, RankTransition, GameTitleCard, GameplaySection, EndingScene
-tools/auto-server.mjs ← API 后端（下载/分析/切片/保存/项目切换）
-tools/ui/             ← React 剪辑 UI（Vite + Remotion Player 预览 + 项目选择器）
-public/{folder}/      ← 视频切片存放目录
-```
-
-## 视频结构
-
-```
-[开场 ~1.5s] → [#5 排名转场 ~2s] → [#5 内容画面 ~12s]
-            → [#4 排名转场 ~2s] → [#4 内容画面 ~12s]
-            → ... 重复到 #1 ...
-            → [#1 内容画面 ~14s] → [硬切结束]
-```
-
-详细风格规范和选片规则见 `@clip-editor`。
 
 ## Workflow
 
@@ -45,9 +18,9 @@ public/{folder}/      ← 视频切片存放目录
 
 分多个阶段处理：
 
-**阶段 A: 文案（`@copywriter2` × 1）**
+**阶段 A: 文案（`@copywriter` × 1）**
 
-调用 `@copywriter2` 生成文案：
+调用 `@copywriter` 生成文案：
 
 ```
 主题：{topic}
@@ -61,7 +34,7 @@ public/{folder}/      ← 视频切片存放目录
 
 `{title}` 格式同 rank YAML 的 titleEn（纯英文、纯中文、或中英混合皆可）。
 
-`@copywriter2` 输出 5 段纯文本旁白（每段约 55~70 字），不输出 YAML。
+`@copywriter` 输出 5 段纯文本旁白（每段约 55~70 字），不输出 YAML。
 
 **收到文案后，由你（top5-video）完成以下整合：**
 
@@ -73,9 +46,9 @@ public/{folder}/      ← 视频切片存放目录
    - 全球前五饮料 → `"年销 20亿瓶"` / `"年销 7亿瓶"`
 3. 按 `template.rank.yaml` 格式创建 5 个 rank YAML 文件（填写 voiceover 文本、subtitles 文本、stats，**无时间轴**，不含 clips）
 
-**阶段 A+: 全部调研（`@content-researcher` × 5）**
+**阶段 A+: 全部调研（`@material-researcher` × 5）**
 
-对每个排名位调用 `@content-researcher` 搜索视频素材：
+对每个排名位调用 `@material-researcher` 搜索视频素材：
 
 ```
 项目名：{project-name}
@@ -83,7 +56,7 @@ public/{folder}/      ← 视频切片存放目录
 folder：{folder}
 ```
 
-`@content-researcher` 自己知道完整流程（搜索数据/视频素材 → 下载低画质 → 截图目视验证筛选），返回：
+`@material-researcher` 自己知道完整流程（搜索数据/视频素材 → 下载低画质 → 截图目视验证筛选），返回：
 - 3-5 个经验证的视频 URL + 质量评分 + 亮点时间戳
 - 低画质视频文件保留在 temp_analysis/
 
@@ -124,11 +97,12 @@ uv run tts_gen.py --batch projects/{project-name}/tts_batch.json | node scripts/
 TTS 时间轴填充完成后、选片之前，必须先验证缓冲区。`build-config.mjs` 会自动从 voiceover 数据计算 gameplayDurations（含 buffer 分配），不需要手算。
 
 1. 生成 project.yaml（只需基本 timing 结构：introDuration、rankTransitionDurations），运行 `npm run project -- {project-name}`
-2. 检查输出中的缓冲区警告（buffer < 0.3s 或 > 1.5s，仅检查 #5→#2）
-3. **如果出现警告**：
-   - 配音过长：调用 `@copywriter2` 精简对应排名位文案
-   - 配音过短：调用 `@copywriter2` 扩充对应排名位文案
-   - 重新 TTS + fill-timeline → 重新 `npm run config` → 确认警告消失
+2. 检查 `npm run config` 是否成功（exit code 0）。脚本会自动校验 72s 卡点对齐：总时长超出或单 rank 缓冲异常都会报错退出（exit code 1）。
+3. **如果报错**：
+   - 配音过长：调用 `@copywriter` 精简文案
+   - 配音过短：调用 `@copywriter` 扩充文案
+   - 大概根据报错来略微调整即可,比如 ERROR: 72s beat exceeded by 1.6s 就只用微调成配音出来大概少1.6s的句子即可
+   - 重新 TTS + fill-timeline → 重新 `npm run config` → 确认错误消失
    - 反复调整仍不达标则接受并备注
 4. 从生成的 `content.config.ts` 读取最终 `gameplayDurations`，进入阶段 C
 
@@ -174,4 +148,3 @@ project.yaml 和 timing 已在阶段 B+ 确定，此步仅同步 clip 数据到 
 - 新项目的全局元数据写入 `projects/<name>/project.yaml`，排名数据写入 rank_*.yaml，用 `npm run project -- <name>` 切换
 - 修改 YAML 后必须运行 `npm run config`（`npm run project` 已自动包含此步骤）
 - 切片文件存放在 `public/{kebab-case-name}/` 下
-- 修改组件时：`<OffthreadVideo>` / `<Video>` 必须 `volume={0}`，用 `staticFile()` 引用 public/ 文件，fps = 60

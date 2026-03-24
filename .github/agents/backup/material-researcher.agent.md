@@ -1,6 +1,6 @@
 ---
-name: content-researcher
-description: "Deep content research agent. Use when: gathering materials, facts, data, quotes, copy, and video URLs for a given topic. Performs exhaustive search using Tavily and Firecrawl. Keywords: research, search, scrape, content, materials, facts, data, copywriting, video, youtube, bilibili"
+name: material-researcher
+description: "Deep material research agent. Use when: gathering materials, facts, data, quotes, copy, and video URLs for a given topic. Performs exhaustive search using Tavily and Firecrawl. Keywords: research, search, scrape, material, materials, facts, data, video, youtube, bilibili"
 tools: [execute/runNotebookCell, execute/testFailure, execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, edit, firecrawl/firecrawl-mcp-server/firecrawl_scrape, 'gemini-media/*', io.github.tavily-ai/tavily-mcp/tavily_search, todo]
 model: "Claude Sonnet 4.6"
 ---
