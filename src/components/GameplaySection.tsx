@@ -550,6 +550,27 @@ const MultiClipBackground: React.FC<{ game: GameItem }> = ({ game }) => {
   const resolved = React.useMemo(() => resolveClipLayout(clips), [clips]);
   const hasExplicitOffsets = clips.some((c) => c.offsetSec != null);
 
+  const clipsEndFrame = React.useMemo(() => {
+    const lastClip = resolved[resolved.length - 1];
+    return Math.round((lastClip.offsetSec + lastClip.durationSec) * fps);
+  }, [resolved, fps]);
+
+  const fillClips = React.useMemo(() => {
+    if (clipsEndFrame >= durationInFrames) return [];
+    const items: Array<{ clipIdx: number; fromFrame: number; durFrames: number }> = [];
+    let cursor = clipsEndFrame;
+    let ci = 0;
+    while (cursor < durationInFrames) {
+      const clip = resolved[ci % resolved.length];
+      const dur = Math.round(clip.durationSec * fps);
+      const remaining = durationInFrames - cursor;
+      items.push({ clipIdx: ci % resolved.length, fromFrame: cursor, durFrames: Math.min(dur, remaining) });
+      cursor += dur;
+      ci++;
+    }
+    return items;
+  }, [resolved, clipsEndFrame, durationInFrames, fps]);
+
   return (
     <>
       <FallbackBg game={game} />
@@ -594,6 +615,24 @@ const MultiClipBackground: React.FC<{ game: GameItem }> = ({ game }) => {
             })}
           </Series>
         )}
+      {fillClips.map((fc, idx) => {
+        const clip = resolved[fc.clipIdx];
+        return (
+          <Sequence
+            key={`fill-${idx}`}
+            from={fc.fromFrame}
+            durationInFrames={fc.durFrames}
+            layout="none"
+          >
+            <ClipWithKenBurns
+              src={clip.src}
+              startFrom={Math.round(clip.startFrom * fps)}
+              globalStartFrame={fc.fromFrame}
+              totalFrames={durationInFrames}
+            />
+          </Sequence>
+        );
+      })}
     </>
   );
 };
@@ -620,7 +659,7 @@ export const GameplaySection: React.FC<{
   statFontSizeOverride, statSkewX, statScaleX, statSpreadRatio,
   watermarkFontSize,
 }) => {
-  const { fps, width, height } = useVideoConfig();
+  const { fps, width, height, durationInFrames } = useVideoConfig();
   const cine = styleConfig.cinematic.gameplay;
 
   return (
@@ -673,30 +712,23 @@ export const GameplaySection: React.FC<{
         </Sequence>
       ))}
 
-      {game.brandVoiceover && (() => {
-        const brandStart = 0.4;
-        let bOff = brandStart;
-        return game.brandVoiceover.map((bv, i) => {
-          const fromFrame = Math.round(bOff * fps);
-          const durFrames = Math.max(1, Math.round(bv.durationSec * fps));
-          bOff += bv.durationSec + 0.3;
-          return (
-            <Sequence
-              key={`brand-vo-${i}`}
-              from={fromFrame}
-              durationInFrames={durFrames}
-              layout="none"
-            >
-              <Audio src={staticFile(bv.src)} volume={1} />
-            </Sequence>
-          );
-        });
-      })()}
+      {game.brandVoiceover?.map((bv, i) => {
+        const fromFrame = Math.round(bv.offsetSec * fps);
+        const durFrames = Math.max(1, Math.round(bv.durationSec * fps));
+        return (
+          <Sequence
+            key={`brand-vo-${i}`}
+            from={fromFrame}
+            durationInFrames={durFrames}
+            layout="none"
+          >
+            <Audio src={staticFile(bv.src)} volume={1} />
+          </Sequence>
+        );
+      })}
 
       {game.voiceover && (() => {
-        const gpDur = game.clips
-          ? Math.max(...resolveClipLayout(game.clips).map((c) => c.offsetSec + c.durationSec))
-          : 600;
+        const gpDur = durationInFrames / fps;
         const voDurs = computeVoiceDurations(game.voiceover, gpDur);
         return game.voiceover.map((vo, i) => {
           const fromFrame = Math.round(vo.offsetSec * fps);

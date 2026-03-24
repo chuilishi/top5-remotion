@@ -9,7 +9,6 @@ export const RemotionRoot: React.FC = () => {
   const data = contentConfig;
   const totalFrames = calculateTotalFrames(data);
 
-
   return (
     <>
       <Composition
@@ -26,7 +25,7 @@ export const RemotionRoot: React.FC = () => {
             行间距: -8,
             字间距系数: 1.06,
             描边粗细: 1,
-            字符高度系数: 1.0,
+            字符高度系数: 1,
           },
           排名数字: {
             容器尺寸: 630,
@@ -64,7 +63,7 @@ export const RemotionRoot: React.FC = () => {
             第2名数值: "",
             第1名数值: "",
           },
-          水印: { 内容: "", 字号: 54 },
+          水印: { 内容: "TopSlice_", 字号: 68 },
         }}
         calculateMetadata={async () => ({
           durationInFrames: calculateTotalFrames(data),

@@ -49,6 +49,7 @@ export interface VoiceoverClip {
 export interface BrandVoiceoverClip {
   src: string;
   text: string;
+  offsetSec: number;
   durationSec: number;
 }
 

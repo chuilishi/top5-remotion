@@ -90,11 +90,11 @@ statNumber:
 
 # ── 水印 ─────────────────────────────────────────────────
 watermark:
-  fontSize: 54
-  top: 22                       # 距顶部 (px)
+  fontSize: 42
+  top: 36                       # 距顶部 (px)
   fillColor: "#FFD700"          # 金色填充
   strokeColor: "#000"           # 黑色描边
-  strokeWidth: 11
+  strokeWidth: 8
 
 
 # ── 排名数字过渡 ────────────────────────────────────────
