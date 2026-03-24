@@ -45,15 +45,16 @@ for (const f of files) {
 
   let mainStart = TITLE_DELAY_SEC;
   if (brandVoiceover.length) {
-    let brandTotal = 0;
-    for (const bv of brandVoiceover) {
+    let bOff = TITLE_DELAY_SEC;
+    for (let bi = 0; bi < brandVoiceover.length; bi++) {
+      const bv = brandVoiceover[bi];
       const dur = durations.get('public/' + bv.src);
       if (!dur) { console.error('MISSING brand:', bv.src); process.exit(1); }
+      bv.offsetSec = bOff;
       bv.durationSec = dur;
-      brandTotal += dur;
+      bOff += dur + (bi < brandVoiceover.length - 1 ? BRAND_SEGMENT_GAP_SEC : 0);
     }
-    brandTotal += BRAND_SEGMENT_GAP_SEC * Math.max(brandVoiceover.length - 1, 0);
-    mainStart = TITLE_DELAY_SEC + brandTotal + BRAND_TO_MAIN_GAP_SEC;
+    mainStart = bOff + BRAND_TO_MAIN_GAP_SEC;
   }
 
   let offset = mainStart;

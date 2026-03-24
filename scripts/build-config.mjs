@@ -18,8 +18,7 @@ import { fileURLToPath } from "url";
 import yaml from "js-yaml";
 
 const PRE_FINAL_BEAT_SEC = 72;
-const MIN_TAIL_BUFFER_SEC = 0.5;
-const BUFFER_WARN_LOW_SEC = 0.3;
+const MIN_TAIL_BUFFER_SEC = 0.3;
 const BUFFER_WARN_HIGH_SEC = 1.5;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -91,44 +90,34 @@ if (rankFiles.length > 0) {
       .slice(0, adjustableCount)
       .reduce((sum, val) => sum + val, 0);
     const remainingBuffer = PRE_FINAL_BEAT_SEC - introDuration - allTransitions - gameplayBeforeFinal;
+    const avgBuffer = remainingBuffer / adjustableCount;
+    const perRankBuffer = MIN_TAIL_BUFFER_SEC + Math.max(0, avgBuffer);
 
-    if (remainingBuffer > 0) {
-      const avg = remainingBuffer / adjustableCount;
-      let rest = remainingBuffer;
-      for (let i = 0; i < adjustableCount; i++) {
-        const bonus = i === adjustableCount - 1 ? rest : avg;
-        gameplayDurations[i] += bonus;
-        rest -= bonus;
-      }
-      gameplayDurations[adjustableCount] += avg;
-    } else if (remainingBuffer < 0) {
+    if (remainingBuffer < 0) {
+      console.error(
+        `ERROR: ${PRE_FINAL_BEAT_SEC}s beat exceeded by ${Math.abs(remainingBuffer).toFixed(1)}s — 配音过长，精简 #5→#2 文案或缩短 rankTransitionDurations`
+      );
+      process.exit(1);
+    }
+
+    if (perRankBuffer > BUFFER_WARN_HIGH_SEC) {
+      const excessTotal = (perRankBuffer - BUFFER_WARN_HIGH_SEC) * adjustableCount;
       console.warn(
-        `Warning: gameplay minimums already exceed ${PRE_FINAL_BEAT_SEC}s beat by ${Math.abs(remainingBuffer).toFixed(1)}s before #1 gameplay.`
+        `Warning: per-rank buffer ${perRankBuffer.toFixed(1)}s > ${BUFFER_WARN_HIGH_SEC}s — 配音过短，画面可能空洞，建议 #5→#2 总共增加约 ${excessTotal.toFixed(1)}s 文案`
       );
     }
+
+    const avg = remainingBuffer / adjustableCount;
+    let rest = remainingBuffer;
+    for (let i = 0; i < adjustableCount; i++) {
+      const bonus = i === adjustableCount - 1 ? rest : avg;
+      gameplayDurations[i] += bonus;
+      rest -= bonus;
+    }
+    gameplayDurations[adjustableCount] += avg;
   }
 
   content.timing.gameplayDurations = gameplayDurations;
-
-  const bufferIssues = [];
-  for (let i = 0; i < adjustableCount; i++) {
-    const vo = games[i].voiceover;
-    if (!vo?.length) continue;
-    const last = vo[vo.length - 1];
-    if (last.offsetSec <= 0 && last.durationSec <= 0) continue;
-    const voEnd = last.offsetSec + last.durationSec;
-    const buffer = gameplayDurations[i] - voEnd;
-    const rankNum = games[i].rank;
-    if (buffer < BUFFER_WARN_LOW_SEC) {
-      bufferIssues.push(`  ⚠ Rank #${rankNum}: buffer ${buffer.toFixed(1)}s < ${BUFFER_WARN_LOW_SEC}s — 配音过长，建议精简文案`);
-    } else if (buffer > BUFFER_WARN_HIGH_SEC) {
-      bufferIssues.push(`  ⚠ Rank #${rankNum}: buffer ${buffer.toFixed(1)}s > ${BUFFER_WARN_HIGH_SEC}s — 配音过短，画面可能空洞`);
-    }
-  }
-  if (bufferIssues.length) {
-    console.warn(`Buffer range check (ideal: ${BUFFER_WARN_LOW_SEC}–${BUFFER_WARN_HIGH_SEC}s):`);
-    bufferIssues.forEach((msg) => console.warn(msg));
-  }
 } else {
   content.games = content.games || [];
 }
