@@ -4,8 +4,11 @@ import { fetchGames, fetchGameDetail, saveGameName as apiSaveGameName, saveTimin
 import { ProjectSelector } from './components/ProjectSelector';
 import { GameConfig } from './components/GameConfig';
 import { TimelineEditor } from './components/TimelineEditor';
+import { UploadPage } from './components/UploadPage';
+import { DanmakuPage } from './components/DanmakuPage';
 
 export function App() {
+  const [page, setPage] = useState<'editor' | 'upload' | 'danmaku'>('editor');
   const [rank, setRank] = useState(5);
   const [games, setGames] = useState<GameData[]>([]);
   const [titleEn, setTitleEn] = useState('');
@@ -68,6 +71,20 @@ export function App() {
 
   return (
     <div className="app-fullwidth">
+      <nav className="page-nav">
+        <button className={`nav-tab${page === 'editor' ? ' active' : ''}`} onClick={() => setPage('editor')}>剪辑编辑器</button>
+        <button className={`nav-tab${page === 'upload' ? ' active' : ''}`} onClick={() => setPage('upload')}>B站投稿</button>
+        <button className={`nav-tab${page === 'danmaku' ? ' active' : ''}`} onClick={() => setPage('danmaku')}>弹幕发送</button>
+      </nav>
+      {page === 'upload' ? (
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: 16 }}>
+          <UploadPage />
+        </div>
+      ) : page === 'danmaku' ? (
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: 16 }}>
+          <DanmakuPage />
+        </div>
+      ) : (
       <div className="edit-container">
         <div className="edit-sidebar">
           <ProjectSelector onSwitch={reloadAll} />
@@ -100,6 +117,7 @@ export function App() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

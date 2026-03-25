@@ -80,6 +80,17 @@ if (-not (Test-Path $videoPath)) {
 }
 Write-Green "视频: $videoPath"
 
+# ── 自动提取封面 (视频1秒处) ──
+$coverPath = Join-Path $env:TEMP "biliup_cover.jpg"
+Write-Cyan "正在提取封面 (1秒处)..."
+& ffmpeg -y -ss 1 -i $videoPath -frames:v 1 -q:v 2 $coverPath 2>$null
+if (Test-Path $coverPath) {
+  Write-Green "封面已提取: $coverPath"
+} else {
+  Write-Yellow "封面提取失败，将不设置封面"
+  $coverPath = ""
+}
+
 # ── 选择项目 (自动填充标题) ──
 Write-Cyan "`n[2/5] 选择项目 (自动填充标题)"
 $projDir = Join-Path $PSScriptRoot "projects"
@@ -166,8 +177,8 @@ $dtimeArg = @()
 switch ($timeChoice) {
   "2" {
     $target = (Get-Date).Date.AddHours(18)
-    if ($target -lt (Get-Date).AddHours(4)) {
-      Write-Yellow "  距提交不足4小时，自动改为明天18:00"
+    if ($target -lt (Get-Date).AddMinutes(5)) {
+      Write-Yellow "  距提交不足5分钟，自动改为明天18:00"
       $target = $target.AddDays(1)
     }
     $dtime = [int][DateTimeOffset]::new($target).ToUnixTimeSeconds()
@@ -176,8 +187,8 @@ switch ($timeChoice) {
   }
   "3" {
     $target = (Get-Date).Date.AddHours(20)
-    if ($target -lt (Get-Date).AddHours(4)) {
-      Write-Yellow "  距提交不足4小时，自动改为明天20:00"
+    if ($target -lt (Get-Date).AddMinutes(5)) {
+      Write-Yellow "  距提交不足5分钟，自动改为明天20:00"
       $target = $target.AddDays(1)
     }
     $dtime = [int][DateTimeOffset]::new($target).ToUnixTimeSeconds()
@@ -193,8 +204,8 @@ switch ($timeChoice) {
   "5" {
     $custom = Read-Host "输入时间 (格式: 2026-03-25 18:00)"
     $target = [DateTime]::ParseExact($custom, "yyyy-MM-dd HH:mm", $null)
-    if ($target -lt (Get-Date).AddHours(4)) {
-      Write-Red "  定时发布需距提交至少4小时！"; exit 1
+    if ($target -lt (Get-Date).AddMinutes(5)) {
+      Write-Red "  定时发布需距提交至少5分钟！"; exit 1
     }
     $dtime = [int][DateTimeOffset]::new($target).ToUnixTimeSeconds()
     $dtimeArg = @("--dtime", $dtime)
@@ -239,6 +250,7 @@ $uploadArgs = @(
 )
 $uploadArgs += $dtimeArg
 if ($tags) { $uploadArgs += @("--tag", $tags) }
+if ($coverPath) { $uploadArgs += @("--cover", $coverPath) }
 
 Write-Host "biliup $($uploadArgs -join ' ')" -ForegroundColor DarkGray
 & biliup @uploadArgs

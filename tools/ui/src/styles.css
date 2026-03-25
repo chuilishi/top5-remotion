@@ -5,8 +5,19 @@ body {
   overflow-x: hidden;
 }
 
+.page-nav {
+  display: flex; gap: 0; border-bottom: 1px solid #22222e; background: #111118; padding: 0 16px;
+}
+.nav-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 600; color: #666;
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: all 0.15s;
+}
+.nav-tab:hover { color: #aaa; }
+.nav-tab.active { color: #ff4444; border-bottom-color: #ff4444; }
+
 .app-fullwidth { width: 100%; }
-.edit-container { display: flex; height: 100vh; overflow: hidden; }
+.edit-container { display: flex; height: calc(100vh - 43px); overflow: hidden; }
 .edit-sidebar {
   width: 280px; min-width: 280px; padding: 16px; overflow-y: auto;
   border-right: 1px solid #22222e; background: #111118;
@@ -103,3 +114,7 @@ button { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 6
 .sub-item {
   background: #0a0a0d; border: 1px solid #1e1e28; border-radius: 8px; padding: 10px; margin: 6px 0;
 }
+
+/* Upload page */
+.upload-page { padding: 8px 0; }
+.upload-form .section { margin-bottom: 12px; }
