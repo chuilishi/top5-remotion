@@ -34,12 +34,7 @@
     "http://127.0.0.1:*"
   ],
   "chat.mcp.access": true,
-  "chat.mcp.discovery.enabled": {
-    "claude-desktop": true,
-    "windsurf": true,
-    "cursor-global": true,
-    "cursor-workspace": true
-  },
+  "chat.mcp.discovery.enabled": true,
   "chat.mcp.apps.enabled": true,
   "chat.mcp.autostart": "newAndOutdated",
   "chat.viewSessions.enabled": true,

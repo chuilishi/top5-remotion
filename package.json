@@ -5,6 +5,7 @@
   "scripts": {
     "config": "node scripts/build-config.mjs",
     "project": "node scripts/switch-project.mjs",
+    "switch": "node scripts/switch-project.mjs",
     "prestart": "npm run config",
     "start": "npx remotion studio",
     "prebuild": "npm run config",

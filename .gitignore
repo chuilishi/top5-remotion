@@ -29,6 +29,10 @@ public/*.mp3
 *.mp4.part
 *.mp4.ytdl
 
+# Bilibili credentials
+bili_cookies.txt
+danmaku_cookie.json
+
 # OS
 .DS_Store
 Thumbs.db
