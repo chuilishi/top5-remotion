@@ -1,7 +1,7 @@
 ---
 name: clip-editor
-description: "Video clip editor for Top 5 videos. Use when: selecting precise clips from pre-verified videos, downloading high-quality segments, assembling rank YAML output. Takes verified video files + research data as input, outputs a complete rank YAML. Keywords: clip, cut, segment, ffmpeg, yt-dlp, gemini_video_analyze, timestamp, montage, fast-cut"
-tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, edit, todo]
+description: "Video clip editor for Top 5 videos. Use when: selecting precise clips from pre-verified videos, downloading high-quality segments, assembling rank YAML output. Takes verified video files + research data as input, outputs a complete rank YAML. Keywords: clip, cut, segment, ffmpeg, yt-dlp, mcp_gemini-media_analyze_media, timestamp, montage, fast-cut"
+tools: [execute/getTerminalOutput, execute/killTerminal, execute/runInTerminal, read, edit, 'gemini-media/*', todo]
 model: "GPT-5.4"
 ---
 
@@ -17,13 +17,12 @@ model: "GPT-5.4"
 [排名转场 ~2s] → [内容画面（时长 = 配音时长）]
 ```
 
-**所有终端命令必须使用隔离模式**：
+**yt-dlp、BBDown、ffmpeg 等终端命令必须使用隔离模式**：
 1. `run_in_terminal(command, isBackground=true)` → 获得 terminal ID
 2. `get_terminal_output(id)` → 获取输出
 3. `kill_terminal(id)` → 立即清理
 
 严禁使用 `isBackground=false`——共享终端会导致输出污染。
-(gemini_video_analyze要花的时间可能挺久的)
 
 ### 风格要点
 
@@ -61,9 +60,12 @@ rank YAML：projects/{project-name}/rank_{rank}_{kebab}.yaml
 
 ### Step 1: 精确选片
 
-用 gemini_video_analyze 分析输入的视频文件，选取**精确**的切片时间戳。单次最多 9 个文件，总时长 < 1 小时，超过必须分批调用。
+调用 `mcp_gemini-media_analyze_media` 分析输入的视频文件，选取**精确**的切片时间戳。
+- `file_paths`：视频文件的**绝对路径**数组（最多 9 个文件，总时长 < 1 小时，超过必须分批调用）
+- `prompt`：使用下面的固定提示词模板
+- `model`：默认 `gemini-3.0-flash-thinking` 即可
 
-以下为发给 Gemini 的**固定提示词模板**。其中 `{target_duration}` 和视频文件为运行时填入的变量；其余所有内容（选片原则、触发词列表、硬性规则、返回格式）**必须原文传入，不得删减、改写或省略**。
+以下为 `prompt` 参数的**固定提示词模板**。其中 `{target_duration}` 为运行时填入的变量；其余所有内容（选片原则、触发词列表、硬性规则、返回格式）**必须原文传入，不得删减、改写或省略**。
 
 ```
 从这些视频中选取 7-10 个切片，总计 ~{target_duration}s，用于快切剪辑蒙太奇。
@@ -154,6 +156,6 @@ ffmpeg -y -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c:v libx26
 
 ## Constraints
 
-- **gemini_video_analyze 限制：最多 9 个文件，总时长 < 1 小时。** 超过必须分批调用
+- **mcp_gemini-media_analyze_media 限制：最多 9 个文件，总时长 < 1 小时。** 超过必须分批调用
 - 选片质量是第一优先级。宁可少选一个镜头也不要选一个画面平庸的镜头
 - 确保所有切片文件都成功下载后再写 YAML

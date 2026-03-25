@@ -1,7 +1,7 @@
 ---
 name: top5-video
 description: "Top 5 Remotion video generator agent. Use when: creating Top 5 countdown videos, generating project.yaml and rank YAML configs, downloading/cutting video clips for a specific rank, writing subtitles and stats. Keywords: top5, remotion, rank, clip, subtitle, stat, yaml, yt-dlp, ffmpeg, countdown"
-tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read, agent, edit, search, todo]
+tools: [execute/runInTerminal, read, agent, edit, search, todo]
 ---
 
 # Top 5 Remotion Video Generator
@@ -39,7 +39,7 @@ tools: [execute/getTerminalOutput, execute/killTerminal, execute/createAndRunTas
 **收到文案后，由你（top5-video）完成以下整合：**
 
 1. 将每段文案按**所有标点符号**切分（句号、逗号、顿号、问号、感叹号、分号），每句一个 voiceover 条目
-2. 确定 stat：根据主题选择一个统一的数据维度，用 `tavily_search` 搜索每个排名位的具体数据。stat 是纯视觉展示元素，只需填 `value` 字段。value 应带单位让观众一眼看懂含义，例如：
+2. 确定 stat：根据主题选择一个统一的数据维度，用 `mcp_io_github_tav_tavily_search` 搜索每个排名位的具体数据。stat 是纯视觉展示元素，只需填 `value` 字段。value 应带单位让观众一眼看懂含义，例如：
    - 全球前五游戏引擎 → `"70% 市占率"` / `"108K Stars"` / `"4% 占比"`
    - 全球前五餐厅 → `"40,000 门店"` / `"8,000 门店"`
    - 全球前五电影 → `"$29亿 票房"` / `"$22亿 票房"`
@@ -122,7 +122,7 @@ rank YAML：projects/{project-name}/rank_{rank}_{kebab-titleEn}.yaml
 - ...
 ```
 
-`@clip-editor` 自己知道完整流程（gemini_video_analyze 精确选片 → 高画质下载 → 将 clips 追加到已有的 rank YAML）。
+`@clip-editor` 自己知道完整流程（mcp_gemini-media_analyze_media 精确选片 → 高画质下载 → 将 clips 追加到已有的 rank YAML）。
 
 可并行调用，分三批：先 #5 和 #4，再 #3、#2 再 #1。(避免速率限制)
 
