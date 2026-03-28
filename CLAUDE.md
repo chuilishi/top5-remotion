@@ -55,24 +55,11 @@ titleLine1: 全球前五
 
 ### 添加新模板
 
-1. 创建 `src/templates/<name>/`（组件 + schema + index.ts）
-2. 在 `src/templates/index.ts` 的 `templateMap` 加一行
-3. 在 `src/Root.tsx` 添加 `<Composition>` 注册
-4. 创建 `projects/<name>/project.yaml`，写 `template: <CompositionId>`
+1. 创建 `src/templates/<name>/`（组件 + schema + index.ts 导出）
+2. 在 `src/Root.tsx` 添加 `<Composition>` 注册
+3. 创建 `projects/<name>/project.yaml`，写 `template: <CompositionId>`
 
-### TemplateDefinition 接口
-
-```ts
-interface TemplateDefinition {
-  id: string;                    // Composition ID
-  component: React.FC<any>;
-  schema: z.ZodType;
-  width: number; height: number; fps: number;
-  durationInFrames: number;
-  defaultProps: Record<string, any>;
-  calculateMetadata?: () => Promise<{...}>;  // 可选：动态计算
-}
-```
+> Studio 会显示 "Can't save default props" 警告（Remotion AST 限制，不影响预览和渲染）
 
 ## 视频结构
 

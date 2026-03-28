@@ -1,8 +1,8 @@
 ---
 name: clip-editor
 description: "Video clip editor for Top 5 videos. Use when: selecting precise clips from pre-verified videos, downloading high-quality segments, assembling rank YAML output. Takes verified video files + research data as input, outputs a complete rank YAML. Keywords: clip, cut, segment, ffmpeg, yt-dlp, mcp_gemini-media_analyze_media, timestamp, montage, fast-cut"
-tools: [execute/getTerminalOutput, execute/killTerminal, execute/runInTerminal, read, edit, 'gemini-media/*', todo]
-model: "GPT-5.4"
+tools: [read, edit, execute, 'gemini-media/*', 'ytdlp/*', 'bili/*', todo]
+model: "Claude Sonnet 4.6"
 ---
 
 # Clip Editor Agent
@@ -16,13 +16,6 @@ model: "GPT-5.4"
 ```
 [排名转场 ~2s] → [内容画面（时长 = 配音时长）]
 ```
-
-**yt-dlp、BBDown、ffmpeg 等终端命令必须使用隔离模式**：
-1. `run_in_terminal(command, isBackground=true)` → 获得 terminal ID
-2. `get_terminal_output(id)` → 获取输出
-3. `kill_terminal(id)` → 立即清理
-
-严禁使用 `isBackground=false`——共享终端会导致输出污染。
 
 ### 风格要点
 
@@ -64,6 +57,7 @@ rank YAML：projects/{project-name}/rank_{rank}_{kebab}.yaml
 - `file_paths`：视频文件的**绝对路径**数组（最多 9 个文件，总时长 < 1 小时，超过必须分批调用）
 - `prompt`：使用下面的固定提示词模板
 - `model`：默认 `gemini-3.0-flash-thinking` 即可
+- **返回值处理**：Gemini 返回的不是纯 JSON，通常含 markdown 代码块（` ```json ``` `）和解释文字。从回复文本中提取 JSON 即可.
 
 以下为 `prompt` 参数的**固定提示词模板**。其中 `{target_duration}` 为运行时填入的变量；其余所有内容（选片原则、触发词列表、硬性规则、返回格式）**必须原文传入，不得删减、改写或省略**。
 
@@ -98,38 +92,23 @@ rank YAML：projects/{project-name}/rank_{rank}_{kebab}.yaml
 
 根据视频来源分别下载：
 
-**YouTube——使用 yt-dlp：**
-将所有 YouTube URL 合并到一条命令：
-```bash
-yt-dlp -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" \
-  --merge-output-format mp4 --no-download-archive --no-part \
-  -o "temp_analysis/hq_%(id)s.mp4" {url1} {url2} {url3}
-```
+**YouTube——使用 MCP 工具：**
+调用 `mcp_ytdlp_ytdlp_download(urls=["url1", "url2", "url3"], output_dir="temp_analysis", quality="hq", filename_template="hq_%(id)s.mp4")`
 
-**B站——使用 BBDown：**
-B站严禁使用 yt-dlp，必须使用 BBDown，用 `&&` 串联成一条复合命令：
-```bash
-BBDown "{url1}" --work-dir "temp_analysis/" -q "1080P 高码率, 1080P 高清" --skip-subtitle --skip-cover --skip-ai -F "<bvid>" ; `
-BBDown "{url2}" --work-dir "temp_analysis/" -q "1080P 高码率, 1080P 高清" --skip-subtitle --skip-cover --skip-ai -F "<bvid>"
-```
-- `-F "<bvid>"` 确保文件名为 BV 号（可预测，方便后续 ffmpeg 引用）
+**B站——使用 MCP 工具：**
+调用 `mcp_bili_bili_download(urls=["url1", "url2"], output_dir="temp_analysis", quality="hq")`
+- 文件名自动使用 BV 号（可预测，方便后续 ffmpeg 引用）
 - 下载后文件为 `temp_analysis/{bvid}.mp4`
 
 - **⚠️ 所有下载必须输出到 `temp_analysis/` 目录，严禁在项目根目录下载任何文件**
 - 下载前先检查 `temp_analysis/` 中是否已存在对应文件，已存在的跳过
-- **YouTube URL 严禁每个单独调用——必须合并为一条 yt-dlp 命令**
 - 下载全部完成后再进入 Step 3
 
 ### Step 3: ffmpeg 本地精确切片
 
-从已下载的高画质源视频中，将所有 clip 的 ffmpeg 命令**合并为一条复合命令**一次执行（避免逐条调用触发 rate limit）：
-
-```bash
-mkdir -p public/{project-name}/{folder} && \
-ffmpeg -y -ss {padStart1} -i temp_analysis/hq_{id1}.mp4 -t {padDur1} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_001.mp4 && \
-ffmpeg -y -ss {padStart2} -i temp_analysis/hq_{id2}.mp4 -t {padDur2} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_002.mp4 && \
-ffmpeg -y -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/{project-name}/{folder}/clip_003.mp4
-# ... 所有 clip 拼接在一条命令中
+对每个 clip **分别**用 `run_in_terminal`（isBackground=true）调用一次 ffmpeg（每次调用只执行一条 ffmpeg 命令，禁止合并多条）：
+```
+ffmpeg -y -ss {padStart} -i "temp_analysis/hq_{id}.mp4" -t {padDur} -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart "public/{project-name}/{folder}/clip_001.mp4"
 ```
 
 - `{project-name}` = 输入中的项目名
@@ -138,7 +117,6 @@ ffmpeg -y -ss {padStart3} -i temp_analysis/hq_{id3}.mp4 -t {padDur3} -c:v libx26
 - 命名：`clip_001.mp4`, `clip_002.mp4`, ...
 - **必须重编码为 h264**（`-c:v libx264`），禁止用 `-c copy`。`-c copy` 会导致负 PTS 时间戳和编码混杂（av1/vp9/h264），Remotion compositor 无法正确提取帧
 - 0.5s 容差在 YAML 中通过 `startFrom: 0.5` 跳过
-- **严禁每个 clip 单独调用一次终端命令——必须合并为一条复合命令**
 
 ### Step 4: 追加 clips 到 rank YAML
 

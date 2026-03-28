@@ -1,7 +1,7 @@
 ---
 name: top5-video
 description: "Top 5 Remotion video generator agent. Use when: creating Top 5 countdown videos, generating project.yaml and rank YAML configs, downloading/cutting video clips for a specific rank, writing subtitles and stats. Keywords: top5, remotion, rank, clip, subtitle, stat, yaml, yt-dlp, ffmpeg, countdown"
-tools: [execute/runInTerminal, read, agent, edit, search, todo]
+tools: [execute/runInTerminal, read/getNotebookSummary, read/problems, read/readFile, read/viewImage, read/readNotebookCellOutput, read/terminalSelection, read/terminalLastCommand, read/getTaskOutput, agent/runSubagent, edit/createDirectory, edit/createFile, edit/createJupyterNotebook, edit/editFiles, edit/editNotebook, edit/rename, search/changes, search/codebase, search/fileSearch, search/listDirectory, search/searchResults, search/textSearch, search/usages, cunzhi2/back, todo]
 ---
 
 # Top 5 Remotion Video Generator
@@ -102,6 +102,7 @@ TTS 时间轴填充完成后、选片之前，必须先验证缓冲区。`build-
    - 配音过长：调用 `@copywriter` 精简文案
    - 配音过短：调用 `@copywriter` 扩充文案
    - 大概根据报错来略微调整即可,比如 ERROR: 72s beat exceeded by 1.6s 就只用微调成配音出来大概少1.6s的句子即可
+   - 文案一定是要copywriter写,而不是自己指导
    - 重新 TTS + fill-timeline → 重新 `npm run config` → 确认错误消失
    - 反复调整仍不达标则接受并备注
 4. 从生成的 `content.config.ts` 读取最终 `gameplayDurations`，进入阶段 C

@@ -15,8 +15,8 @@ bing/
 remotion-src/
 
 # Generated config (rebuild with: npm run config)
-src/config/content.config.ts
-src/config/style.config.ts
+src/templates/active.ts
+public/_active/
 
 # Video assets (too large for git)
 public/*/
@@ -40,6 +40,7 @@ Thumbs.db
 # Secrets
 .env
 cookies.json
+cookies-*.txt
 
 # Remotion temp
 .remotion-tmp/

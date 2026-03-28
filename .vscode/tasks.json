@@ -408,6 +408,19 @@
 				"temp_analysis/magic-the-gathering/run_ffmpeg_magic.ps1"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "cut-sekiro-clips-789",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"temp_analysis/sekiro/run_ffmpeg_sekiro.ps1"
+			],
+			"isBackground": false
 		}
 	]
 }

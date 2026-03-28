@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "ytdlp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/tools/ytdlp-mcp.mjs"]
+    },
+    "bili": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/tools/bili-mcp.mjs"]
+    }
+  }
+}
