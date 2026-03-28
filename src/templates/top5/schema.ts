@@ -52,7 +52,6 @@ export const top5Schema = z.object({
     内容: z.string(),
     字号: z.number().min(20).max(100),
   }),
-  content: z.any().optional(),
 });
 
 export type Top5Props = z.infer<typeof top5Schema>;

@@ -1,33 +1,30 @@
 import React from "react";
 import { Composition } from "remotion";
-import { top5Template, top5DefaultProps } from "./templates/top5";
-import { gaoShouRuYunTemplate, gaoShouRuYunDefaultProps } from "./templates/gaoshou-ru-yun";
-
-const t5 = top5Template;
-const gs = gaoShouRuYunTemplate;
+import { Top5Video, top5Schema, top5DefaultProps, top5CalculateMetadata } from "./templates/top5";
+import { GaoShouRuYun, gaoShouRuYunSchema, gaoShouRuYunDefaultProps } from "./templates/gaoshou-ru-yun";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        id={t5.id}
-        component={t5.component}
-        schema={t5.schema}
-        durationInFrames={t5.durationInFrames}
-        fps={t5.fps}
-        width={t5.width}
-        height={t5.height}
+        id="Top5Video"
+        component={Top5Video}
+        schema={top5Schema}
+        durationInFrames={300}
+        fps={30}
+        width={1920}
+        height={1080}
         defaultProps={top5DefaultProps}
-        calculateMetadata={t5.calculateMetadata}
+        calculateMetadata={top5CalculateMetadata}
       />
       <Composition
-        id={gs.id}
-        component={gs.component}
-        schema={gs.schema}
-        durationInFrames={gs.durationInFrames}
-        fps={gs.fps}
-        width={gs.width}
-        height={gs.height}
+        id="GaoShouRuYun"
+        component={GaoShouRuYun}
+        schema={gaoShouRuYunSchema}
+        durationInFrames={1797}
+        fps={30}
+        width={1080}
+        height={1920}
         defaultProps={gaoShouRuYunDefaultProps}
       />
     </>
