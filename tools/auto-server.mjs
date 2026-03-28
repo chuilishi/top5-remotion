@@ -36,32 +36,6 @@ function getProjectDir() {
   return join(ROOT, "projects", name);
 }
 
-function findRankFilePath(rank) {
-  const dir = getProjectDir();
-  if (!dir || !existsSync(dir)) return null;
-  const files = readdirSync(dir).filter(f => /^rank_\d+_.+\.yaml$/.test(f));
-  for (const f of files) {
-    const d = yaml.load(readFileSyncFs(join(dir, f), "utf8"));
-    if (d.rank === rank) return join(dir, f);
-  }
-  return null;
-}
-
-function saveRankData(rank, data) {
-  const filePath = findRankFilePath(rank);
-  if (!filePath) throw new Error(`Rank file not found for rank ${rank}`);
-  writeFileSyncFs(filePath, yaml.dump(data, { lineWidth: -1, quotingType: '"', forceQuotes: false }), "utf8");
-}
-
-function saveHeaderTiming(config) {
-  const dir = getProjectDir();
-  if (!dir) return;
-  const yamlPath = join(dir, "project.yaml");
-  const raw = existsSync(yamlPath) ? readFileSyncFs(yamlPath, "utf8") : "";
-  const header = yaml.load(raw) || {};
-  if (config.timing) header.timing = config.timing;
-  writeFileSyncFs(yamlPath, yaml.dump(header, { lineWidth: -1, quotingType: '"', forceQuotes: false }), "utf8");
-}
 
 
 const UI_DIST = join(__dirname, "ui", "dist");
@@ -136,37 +110,6 @@ const server = http.createServer(async (req, res) => {
     }
     return;
   }
-  if (req.method === "GET" && req.url === "/api/config") {
-    try {
-      const config = loadFullConfig();
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(config.games || []));
-    } catch {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("[]");
-    }
-    return;
-  }
-  if (req.method === "POST" && req.url === "/api/game-name") {
-    let body = "";
-    for await (const chunk of req) body += chunk;
-    try {
-      const { rank, titleEn, titleZh } = JSON.parse(body);
-      const config = loadFullConfig();
-      const game = config.games?.find((g) => g.rank === rank);
-      if (game) {
-        game.titleEn = titleEn;
-        game.titleZh = titleZh;
-        saveRankData(rank, game);
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("{}");
-    } catch {
-      res.writeHead(400);
-      res.end("Bad Request");
-    }
-    return;
-  }
   if (req.method === "GET" && req.url.startsWith("/public/")) {
     const filePath = join(ROOT, decodeURIComponent(req.url));
     try {
@@ -203,55 +146,6 @@ const server = http.createServer(async (req, res) => {
     } catch {
       res.writeHead(404);
       res.end("Not Found");
-    }
-    return;
-  }
-  if (req.method === "GET" && req.url.startsWith("/api/game-detail")) {
-    try {
-      const rank = parseInt(req.url.split("rank=")[1]);
-      const config = loadFullConfig();
-      const game = config.games?.find((g) => g.rank === rank);
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(game || null));
-    } catch {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("null");
-    }
-    return;
-  }
-  if (req.method === "POST" && req.url === "/api/save-timing") {
-    let body = "";
-    for await (const chunk of req) body += chunk;
-    try {
-      const { rank, subtitles, stats, clips, voiceover } = JSON.parse(body);
-      const config = loadFullConfig();
-      const game = config.games?.find((g) => g.rank === rank);
-      if (game) {
-        if (subtitles) game.subtitles = subtitles;
-        if (stats) game.stats = stats;
-        if (voiceover) game.voiceover = voiceover;
-        if (clips) {
-          game.clips = clips;
-          let cum = 0, maxEnd = 0;
-          for (const c of clips) {
-            const start = c.offsetSec != null ? c.offsetSec : cum;
-            const end = start + c.durationSec;
-            if (end > maxEnd) maxEnd = end;
-            cum += c.durationSec;
-          }
-          const idx = config.games.indexOf(game);
-          if (config.timing?.gameplayDurations) {
-            config.timing.gameplayDurations[idx] = Math.round(maxEnd);
-            saveHeaderTiming(config);
-          }
-        }
-        saveRankData(rank, game);
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end("{}");
-    } catch {
-      res.writeHead(400);
-      res.end("Bad Request");
     }
     return;
   }
