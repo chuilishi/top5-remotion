@@ -14,6 +14,9 @@ temp_hq/
 bing/
 remotion-src/
 
+# Local Remotion build (tarballs tracked, repack script tracked)
+# remotion-local/*.tgz are committed as build artifacts
+
 # Generated config (rebuild with: npm run config)
 src/templates/active.ts
 public/_active/

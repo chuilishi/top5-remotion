@@ -87,6 +87,43 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 流程：用户提供排名 → copywriter → material-researcher × 5 调研 → top5-video 填 YAML + 搜 stat → TTS → clip-editor × 5 → 合并渲染
 
+## 自定义 Remotion（本地源码构建）
+
+所有 Remotion 包都从本地源码构建，不依赖 npm registry。
+
+### 架构
+
+- 源码：`remotion-src/`（Remotion v4.0.441 monorepo）
+- 构建产物：`remotion-local/*.tgz`（17 个 tarball）
+- `package.json` 通过 `file:remotion-local/xxx.tgz` + `overrides` 引用本地包
+- 构建工具：Bun 1.3.3 + Turbo 2.8.20 + tsgo
+
+### 源码改动
+
+1. **NVENC 直接编码**（`renderer/src/get-codec-name.ts`）：Windows 下 h264→h264_nvenc, h265→hevc_nvenc
+2. **GPU 光栅化**（`renderer/src/open-browser.ts`）：添加 `--enable-gpu-rasterization` flag
+3. **NVDEC 硬件解码**（`compositor/rust/cuda_ctx.rs`, `opened_stream.rs`）：Rust compositor CUDA 加速
+4. **音频编码器**（`renderer/src/options/audio-codec.tsx`, `compress-audio.ts`, `combine-audio.ts`）：`libfdk_aac` → 原生 `aac`（BtbN FFmpeg 不含 libfdk_aac）
+5. **FFmpeg 替换**（`compositor-win32-x64-msvc/`）：BtbN 7.1 GPL shared build（CUDA/NVDEC/NVENC）
+
+### 重新构建流程
+
+```powershell
+cd remotion-src
+bun install                                    # 安装依赖
+npx turbo run make --filter="@remotion/cli..." # 构建（~20s）
+cd ..; powershell -File remotion-local/repack.ps1  # 打包 tarball
+cd top5-remotion; npm install                  # 安装本地包
+```
+
+### 渲染
+
+```powershell
+.\render.ps1   # 一步 NVENC 直接编码（不再两步 ProRes+NVENC）
+```
+
+配置：`remotion.config.ts` 使用 JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发
+
 ## 关键约束
 
 - `src/templates/active.ts` 是自动生成的，不要手动编辑
