@@ -1,11 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
-import {
-  top5Template,
-  top5DefaultProps,
-  gaoShouRuYunTemplate,
-  gaoShouRuYunDefaultProps,
-} from "./templates";
+import { top5Template, top5DefaultProps } from "./templates/top5";
+import { gaoShouRuYunTemplate, gaoShouRuYunDefaultProps } from "./templates/gaoshou-ru-yun";
 
 const t5 = top5Template;
 const gs = gaoShouRuYunTemplate;
@@ -22,7 +18,7 @@ export const RemotionRoot: React.FC = () => {
         width={t5.width}
         height={t5.height}
         defaultProps={top5DefaultProps}
-        {...(t5.calculateMetadata ? { calculateMetadata: t5.calculateMetadata } : {})}
+        calculateMetadata={t5.calculateMetadata}
       />
       <Composition
         id={gs.id}

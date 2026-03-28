@@ -47,7 +47,6 @@ export const top5DefaultProps = {
     第1名数值: "",
   },
   水印: { 内容: "TopSlice_", 字号: 68 },
-  content: undefined,
 };
 
 export const top5Template: TemplateDefinition = {
