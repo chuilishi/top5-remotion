@@ -12,7 +12,6 @@ tools/.tmp/
 temp_analysis/
 temp_hq/
 bing/
-remotion-src/
 
 # Local Remotion build (tarballs tracked, repack script tracked)
 # remotion-local/*.tgz are committed as build artifacts
