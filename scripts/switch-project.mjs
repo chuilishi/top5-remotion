@@ -23,6 +23,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import { createInterface } from "readline";
+import yaml from "js-yaml";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -49,8 +50,11 @@ function switchTo(name) {
     console.error(`Error: projects/${name}/project.yaml not found.`);
     process.exit(1);
   }
+  const config = yaml.load(readFileSync(projectYaml, "utf8"));
+  const template = config.template || "(default)";
   writeFileSync(resolve(root, ".current-project"), name, "utf8");
   console.log(`Switched to project: ${name}`);
+  console.log(`Template: ${template}`);
   execSync("npm run config", { cwd: root, stdio: "inherit" });
 }
 
