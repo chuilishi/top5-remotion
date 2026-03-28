@@ -33,7 +33,20 @@ const RANK1_TAIL_BUFFER_SEC = 3.7;
 
 async function readJson(relativePath: string): Promise<unknown> {
   const res = await fetch(staticFile(relativePath));
+  if (!res.ok) return null;
   return res.json();
+}
+
+async function loadRankFiles(): Promise<ContentConfig["games"]> {
+  const manifest = await readJson("_active/ranks/index.json") as string[] | null;
+  if (!manifest || manifest.length === 0) return [];
+  const rankFiles = manifest.filter((f) => /^rank_\d+_.+\.json$/.test(f));
+  const games = await Promise.all(
+    rankFiles.map((f) => readJson(`_active/ranks/${f}`))
+  );
+  return (games.filter(Boolean) as ContentConfig["games"]).sort(
+    (a, b) => b.rank - a.rank
+  );
 }
 
 function computeTiming(content: ContentConfig): ContentConfig {
@@ -98,8 +111,9 @@ function computeTiming(content: ContentConfig): ContentConfig {
 }
 
 export async function loadContentConfig(): Promise<ContentConfig> {
-  const raw = await readJson("_active/content.json") as ContentConfig;
-  return computeTiming(raw);
+  const project = await readJson("_active/project.json") as ContentConfig;
+  project.games = await loadRankFiles();
+  return computeTiming(project);
 }
 
 // ──────────── 时间线计算工具 ────────────
