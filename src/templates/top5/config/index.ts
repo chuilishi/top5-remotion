@@ -58,9 +58,9 @@ function computeTiming(content: ContentConfig): ContentConfig {
     : [];
   const minGameplayDurations = games.map((game, i) => {
     const vo = game.voiceover;
-    if (vo?.length > 0) {
+    if (vo && vo.length > 0) {
       const last = vo[vo.length - 1];
-      if (last.offsetSec > 0 || last.durationSec > 0) {
+      if (last && (last.offsetSec > 0 || last.durationSec > 0)) {
         return last.offsetSec + last.durationSec + MIN_TAIL_BUFFER_SEC;
       }
     }
@@ -110,10 +110,14 @@ function computeTiming(content: ContentConfig): ContentConfig {
   return content;
 }
 
+let cachedContent: ContentConfig | null = null;
+
 export async function loadContentConfig(): Promise<ContentConfig> {
+  if (cachedContent) return cachedContent;
   const project = await readJson("_active/project.json") as ContentConfig;
   project.games = await loadRankFiles();
-  return computeTiming(project);
+  cachedContent = computeTiming(project);
+  return cachedContent;
 }
 
 // ──────────── 时间线计算工具 ────────────
