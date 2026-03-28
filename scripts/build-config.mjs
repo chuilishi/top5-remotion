@@ -20,6 +20,7 @@ import yaml from "js-yaml";
 const PRE_FINAL_BEAT_SEC = 72;
 const MIN_TAIL_BUFFER_SEC = 0.3;
 const BUFFER_WARN_HIGH_SEC = 1.5;
+const RANK1_TAIL_BUFFER_SEC = 3.7;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -42,6 +43,59 @@ if (!existsSync(projectYamlPath)) {
   process.exit(1);
 }
 const content = yaml.load(readFileSync(projectYamlPath, "utf8"));
+
+const template = content.template || "Top5Video";
+console.log(`Template: ${template}`);
+
+// ── 生成 active.ts（活跃模板标记）──────────────────────
+
+const activeTs = `\
+// ⚠️ 此文件由 scripts/build-config.mjs 自动生成
+export const activeTemplateId = "${template}";
+`;
+writeFileSync(resolve(root, "src/templates/active.ts"), activeTs, "utf8");
+console.log(`✅ src/templates/active.ts → ${template}`);
+
+// ── 非 Top5Video 模板：只写 template 标记，跳过 rank 处理 ──
+
+if (template !== "Top5Video") {
+  const configDir = resolve(root, "src/templates/top5/config");
+  const markerTs = `\
+// ⚠️ 此文件由 scripts/build-config.mjs 自动生成
+// 生成时间: ${new Date().toISOString()}
+
+import type { ContentConfig } from "./types";
+
+const contentConfig: ContentConfig = ${JSON.stringify(content, null, 2)} as any;
+
+export default contentConfig;
+`;
+
+  const styleYaml = readFileSync(resolve(root, "style.config.yaml"), "utf8");
+  const style = yaml.load(styleYaml);
+  const styleJson = JSON.stringify(style, (key, val) => {
+    if (val === Infinity) return "__INFINITY__";
+    return val;
+  }, 2).replace(/"__INFINITY__"/g, "Infinity");
+
+  const styleTs = `\
+// ⚠️ 此文件由 scripts/build-config.mjs 自动生成
+// 生成时间: ${new Date().toISOString()}
+
+import type { StyleConfig } from "./types";
+
+const styleConfig: StyleConfig = ${styleJson};
+
+export default styleConfig;
+`;
+
+  writeFileSync(resolve(configDir, "content.config.ts"), markerTs, "utf8");
+  console.log("✅ src/templates/top5/config/content.config.ts (non-Top5 placeholder)");
+  writeFileSync(resolve(configDir, "style.config.ts"), styleTs, "utf8");
+  console.log("✅ src/templates/top5/config/style.config.ts");
+  console.log(`\n配置生成完成！在 Remotion Studio 中选择 Composition: ${template}`);
+  process.exit(0);
+}
 
 // ── 读取 style.config.yaml ───────────────────────────
 
@@ -114,7 +168,7 @@ if (rankFiles.length > 0) {
       gameplayDurations[i] += bonus;
       rest -= bonus;
     }
-    gameplayDurations[adjustableCount] += avg;
+    gameplayDurations[adjustableCount] += (RANK1_TAIL_BUFFER_SEC - MIN_TAIL_BUFFER_SEC);
   }
 
   content.timing.gameplayDurations = gameplayDurations;
@@ -168,12 +222,12 @@ export default styleConfig;
 
 // ── 写入 ────────────────────────────────────────────────
 
-const configDir = resolve(root, "src/config");
+const configDir = resolve(root, "src/templates/top5/config");
 
 writeFileSync(resolve(configDir, "content.config.ts"), contentTs, "utf8");
-console.log("✅ src/config/content.config.ts");
+console.log("✅ src/templates/top5/config/content.config.ts");
 
 writeFileSync(resolve(configDir, "style.config.ts"), styleTs, "utf8");
-console.log("✅ src/config/style.config.ts");
+console.log("✅ src/templates/top5/config/style.config.ts");
 
 console.log("\\n配置生成完成！");
