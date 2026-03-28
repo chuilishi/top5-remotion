@@ -219,7 +219,7 @@ export function UploadPage() {
 
         <div className="section" style={{ marginBottom: 12 }}>
           <label>封面</label>
-          <div style={{ fontSize: 12, color: '#888' }}>自动截取视频第1秒画面</div>
+          <div style={{ fontSize: 12, color: '#888' }}>优先使用渲染封面 (_cover.png)，无则截取视频第1秒</div>
         </div>
 
         <div className="actions" style={{ marginTop: 16 }}>

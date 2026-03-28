@@ -371,10 +371,13 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const coverPath = join(ROOT, "out", ".upload_cover.jpg");
-      try {
-        execSync(`ffmpeg -y -ss 1 -i "${videoPath}" -frames:v 1 -q:v 2 "${coverPath}"`, { stdio: "ignore" });
-      } catch {}
+      const coverPng = join(ROOT, "out", video.replace(/\.mp4$/i, "_cover.png"));
+      const coverPath = existsSync(coverPng) ? coverPng : join(ROOT, "out", ".upload_cover.jpg");
+      if (!existsSync(coverPng)) {
+        try {
+          execSync(`ffmpeg -y -ss 1 -i "${videoPath}" -frames:v 1 -q:v 2 "${coverPath}"`, { stdio: "ignore" });
+        } catch {}
+      }
 
       const args = [
         "-u", cookieFile,

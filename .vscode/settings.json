@@ -28,20 +28,24 @@
     "/^format\\s+/": false,
     "/^del\\s+\\/[sS]\\s+C:\\\\$/": false
   },
-  "chat.tools.urls.autoApprove": [
-    "https://*",
-    "http://localhost:*",
-    "http://127.0.0.1:*"
-  ],
   "chat.mcp.access": true,
-  "chat.mcp.discovery.enabled": {
-    "claude-desktop": true,
-    "windsurf": true,
-    "cursor-global": true,
-    "cursor-workspace": true
-  },
+  "chat.mcp.discovery.enabled": true,
   "chat.mcp.apps.enabled": true,
   "chat.mcp.autostart": "newAndOutdated",
   "chat.viewSessions.enabled": true,
-  "workbench.secondarySideBar.showLabels": true
+  "workbench.secondarySideBar.showLabels": true,
+
+  "git.enabled": false,
+  "git.autoRefresh": false,
+  "git.decorations.enabled": false,
+  "git.autofetch": false,
+  "scm.diffDecorations": "none",
+
+  "files.watcherExclude": {
+    "**/temp_analysis/**": true,
+    "**/.remotion-tmp/**": true,
+    "**/node_modules/**": true,
+    "**/out/**": true,
+    "**/.venv/**": true
+  }
 }
