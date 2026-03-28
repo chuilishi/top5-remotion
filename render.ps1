@@ -1,4 +1,4 @@
-# 渲染 Top5 视频 (两步渲染: ProRes + NVENC)
+# 渲染视频 (两步渲染: ProRes + NVENC)
 # 用法: .\render.ps1
 
 $ErrorActionPreference = "Stop"
@@ -19,12 +19,16 @@ $tempProRes = "out/${projectName}_${timestamp}_temp.mov"
 Write-Host "`n== 生成配置 ==" -ForegroundColor Cyan
 npm run config
 
+$activeFile = Join-Path $projectRoot "src/templates/active.ts"
+$compositionId = (Select-String -Path $activeFile -Pattern 'activeTemplateId = "(.+?)"').Matches[0].Groups[1].Value
+Write-Host "Composition: $compositionId" -ForegroundColor DarkCyan
+
 Write-Host "`n== 第一步: Remotion → ProRes ==" -ForegroundColor Cyan
 Write-Host "中间文件: $tempProRes`n"
 
 $swTotal = [System.Diagnostics.Stopwatch]::StartNew()
 $sw1 = [System.Diagnostics.Stopwatch]::StartNew()
-npx remotion render Top5Video $tempProRes --codec=prores --prores-profile=standard
+npx remotion render $compositionId $tempProRes --codec=prores --prores-profile=standard
 $sw1.Stop()
 
 if ($LASTEXITCODE -ne 0) {
