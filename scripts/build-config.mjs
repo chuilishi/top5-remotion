@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 /**
- * YAML → TypeScript 配置转换脚本
+ * 项目配置准备脚本
  *
- * 读取活跃项目的 project.yaml，生成 src/templates/active.ts，
- * 然后调用各模板的 build.mjs 钩子生成模板专属配置文件。
+ * 读取活跃项目的 YAML 文件，生成:
+ *   1. src/templates/active.ts — 当前模板 ID
+ *   2. public/_active/content.json — 项目原始数据（无计算，运行时由 calculateMetadata 处理）
  *
  * 用法:
  *   node scripts/build-config.mjs
  *   npm run config
- *
- * YAML 是唯一的配置来源，生成的 .ts 文件不要手动编辑。
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
-import { fileURLToPath, pathToFileURL } from "url";
+import { fileURLToPath } from "url";
 import yaml from "js-yaml";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,18 +50,25 @@ export const activeTemplateId = "${template}";
 writeFileSync(resolve(root, "src/templates/active.ts"), activeTs, "utf8");
 console.log(`✅ src/templates/active.ts → ${template}`);
 
-// ── 调用模板构建钩子 ──────────────────────────────────
+// ── 组装原始数据 → public/_active/content.json ────────
 
-const templatesDir = resolve(root, "src/templates");
-const templateDirs = readdirSync(templatesDir, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && existsSync(resolve(templatesDir, d.name, "build.mjs")))
-  .map((d) => d.name);
+const rankFiles = readdirSync(projectDir)
+  .filter((f) => /^rank_\d+_.+\.yaml$/.test(f))
+  .sort();
 
-for (const dir of templateDirs) {
-  const buildPath = resolve(templatesDir, dir, "build.mjs");
-  const mod = await import(pathToFileURL(buildPath).href);
-  const isActive = mod.templateId === template;
-  await mod.buildConfig({ isActive, projectDir, projectContent: content, root });
+if (rankFiles.length > 0) {
+  const games = rankFiles.map((f) =>
+    yaml.load(readFileSync(resolve(projectDir, f), "utf8"))
+  );
+  games.sort((a, b) => b.rank - a.rank);
+  content.games = games;
+} else {
+  content.games = content.games || [];
 }
+
+const activeDir = resolve(root, "public/_active");
+mkdirSync(activeDir, { recursive: true });
+writeFileSync(resolve(activeDir, "content.json"), JSON.stringify(content, null, 2), "utf8");
+console.log("✅ public/_active/content.json");
 
 console.log("\n配置生成完成！");

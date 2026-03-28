@@ -1,7 +1,5 @@
-// ⚠️ 此文件由 scripts/build-config.mjs 自动生成
-// ⚠️ 请勿手动编辑 — 修改 style.config.yaml 后运行 npm run config
-//
-// 生成时间: 2026-03-28T05:34:12.211Z
+// Top5 视觉风格配置 — 手动维护
+// 原始来源: style.config.yaml（已废弃）
 
 import type { StyleConfig } from "./types";
 

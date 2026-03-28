@@ -47,6 +47,7 @@ export const top5DefaultProps = {
     第1名数值: "",
   },
   水印: { 内容: "TopSlice_", 字号: 68 },
+  content: undefined,
 };
 
 export const top5Template: TemplateDefinition = {
@@ -57,14 +58,15 @@ export const top5Template: TemplateDefinition = {
   height: 1080,
   fps: 30,
   durationInFrames: 300,
-  calculateMetadata: async () => {
-    const { contentConfig, calculateTotalFrames } = await import("./config");
-    const data = contentConfig;
+  calculateMetadata: async ({ props }) => {
+    const { loadContentConfig, calculateTotalFrames } = await import("./config");
+    const content = await loadContentConfig();
     return {
-      durationInFrames: calculateTotalFrames(data),
-      fps: data.fps,
-      width: data.width,
-      height: data.height,
+      durationInFrames: calculateTotalFrames(content),
+      fps: content.fps,
+      width: content.width,
+      height: content.height,
+      props: { ...props, content },
     };
   },
   defaultProps: top5DefaultProps,

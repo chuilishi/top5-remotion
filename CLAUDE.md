@@ -21,7 +21,7 @@ projects/{name}/             ← 每个视频项目
   rank_{1-5}_{folder}.yaml   ← Top5 模板专用数据文件
 public/{folder}/             ← 视频切片 + 音频文件
 scripts/
-  build-config.mjs           ← project.yaml → active.ts + 调用模板 build 钩子
+  build-config.mjs           ← project.yaml → active.ts + public/_active/content.json
   switch-project.mjs         ← 切换项目 + 触发 config
 src/
   Root.tsx                    ← 注册所有 Composition（多模板）
@@ -30,9 +30,9 @@ src/
     registry.ts               ← TemplateDefinition 类型定义
     index.ts                  ← templateMap + activeTemplate 导出
     top5/                     ← Top5Video 模板
-      build.mjs               ← Top5 专属构建钩子（72s 卡点、rank 时序计算）
+      config/style.config.ts  ← 手维护视觉风格
     gaoshou-ru-yun/           ← GaoShouRuYun 模板
-style.config.yaml             ← 视觉风格（Top5 模板用）
+public/_active/               ← 自动生成：当前项目的原始数据 JSON
 ```
 
 ## 多模板架构
@@ -47,19 +47,18 @@ titleLine1: 全球前五
 
 一个模板可以被多个项目使用（不同数据，相同模板）。
 
-### 模板构建钩子
+### 运行时配置加载
 
-`build-config.mjs` 扫描 `src/templates/*/build.mjs`，调用每个钩子的 `buildConfig()`：
-- 活跃模板：生成完整配置文件
-- 非活跃模板：生成 placeholder（防止 import 报错）
+`npm run config` 生成 `public/_active/content.json`（纯数据，无计算）。
+`calculateMetadata` 在运行时 fetch 该 JSON，计算时序（72s 卡点、buffer 分配），
+通过 props 传递给组件。无代码生成。
 
 ### 添加新模板
 
 1. 创建 `src/templates/<name>/`（组件 + schema + index.ts）
 2. 在 `src/templates/index.ts` 的 `templateMap` 加一行
 3. 在 `src/Root.tsx` 添加 `<Composition>` 注册
-4. 如需自动生成配置，创建 `build.mjs`（导出 `templateId` + `buildConfig()`）
-5. 创建 `projects/<name>/project.yaml`，写 `template: <CompositionId>`
+4. 创建 `projects/<name>/project.yaml`，写 `template: <CompositionId>`
 
 ### TemplateDefinition 接口
 
@@ -89,7 +88,7 @@ interface TemplateDefinition {
 
 rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然后：
 1. `npm run project -- <name>`（或 `npm run config` 如果不切换项目）
-2. 生成的 `src/templates/top5/config/content.config.ts` 不要手动编辑
+2. 生成 `public/_active/content.json`（纯数据），运行时 `calculateMetadata` 加载并计算时序
 
 ## Agent 协作
 
@@ -103,8 +102,8 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 ## 关键约束
 
-- `src/templates/*/config/*.ts` 是自动生成的，不要手动编辑
 - `src/templates/active.ts` 是自动生成的，不要手动编辑
+- `public/_active/` 是自动生成的，不要手动编辑
 - 视频文件用 `<OffthreadVideo>` 必须 `volume={0}`
 - fps = 60
 - TTS 语速：7.3 字/秒（Fish Audio, speed=1.3, atempo=1.1）
