@@ -1,4 +1,4 @@
 [submodule "remotion-src"]
 	path = remotion-src
 	url = https://github.com/chuilishi/remotion-custom.git
-	branch = custom-nvdec-orphan
+	branch = main
