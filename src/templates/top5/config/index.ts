@@ -26,11 +26,6 @@ export type {
 import { staticFile } from "remotion";
 import type { ContentConfig } from "./types";
 
-const PRE_FINAL_BEAT_SEC = 72;
-const MIN_TAIL_BUFFER_SEC = 0.3;
-const BUFFER_WARN_HIGH_SEC = 1.5;
-const RANK1_TAIL_BUFFER_SEC = 3.7;
-
 async function readJson(relativePath: string): Promise<unknown> {
   const res = await fetch(staticFile(relativePath));
   if (!res.ok) return null;
@@ -49,74 +44,13 @@ async function loadRankFiles(): Promise<ContentConfig["games"]> {
   );
 }
 
-function computeTiming(content: ContentConfig): ContentConfig {
-  const games = content.games || [];
-  if (!content.timing) content.timing = {} as ContentConfig["timing"];
-
-  const existingGameplayDurations = Array.isArray(content.timing.gameplayDurations)
-    ? [...content.timing.gameplayDurations]
-    : [];
-  const minGameplayDurations = games.map((game, i) => {
-    const vo = game.voiceover;
-    if (vo && vo.length > 0) {
-      const last = vo[vo.length - 1];
-      if (last && (last.offsetSec > 0 || last.durationSec > 0)) {
-        return last.offsetSec + last.durationSec + MIN_TAIL_BUFFER_SEC;
-      }
-    }
-    return existingGameplayDurations[i] ?? 20;
-  });
-
-  const gameplayDurations = [...minGameplayDurations];
-  const adjustableCount = Math.max(0, games.length - 1);
-  const introDuration = content.timing.introDuration ?? 2;
-  const rankTransitionDurations = Array.isArray(content.timing.rankTransitionDurations)
-    ? content.timing.rankTransitionDurations
-    : [];
-
-  if (adjustableCount > 0) {
-    const allTransitions = rankTransitionDurations
-      .reduce((sum: number, val: number) => sum + (Number(val) || 0), 0);
-    const gameplayBeforeFinal = minGameplayDurations
-      .slice(0, adjustableCount)
-      .reduce((sum: number, val: number) => sum + val, 0);
-    const remainingBuffer = PRE_FINAL_BEAT_SEC - introDuration - allTransitions - gameplayBeforeFinal;
-
-    if (remainingBuffer < 0) {
-      console.error(
-        `ERROR: ${PRE_FINAL_BEAT_SEC}s beat exceeded by ${Math.abs(remainingBuffer).toFixed(1)}s`
-      );
-    }
-
-    const perRankBuffer = MIN_TAIL_BUFFER_SEC + Math.max(0, remainingBuffer / adjustableCount);
-    if (perRankBuffer > BUFFER_WARN_HIGH_SEC) {
-      const excessTotal = (perRankBuffer - BUFFER_WARN_HIGH_SEC) * adjustableCount;
-      console.warn(
-        `Warning: per-rank buffer ${perRankBuffer.toFixed(1)}s > ${BUFFER_WARN_HIGH_SEC}s — 配音过短，建议增加约 ${excessTotal.toFixed(1)}s 文案`
-      );
-    }
-
-    const avg = remainingBuffer / adjustableCount;
-    let rest = remainingBuffer;
-    for (let i = 0; i < adjustableCount; i++) {
-      const bonus = i === adjustableCount - 1 ? rest : avg;
-      gameplayDurations[i] += bonus;
-      rest -= bonus;
-    }
-    gameplayDurations[adjustableCount] += (RANK1_TAIL_BUFFER_SEC - MIN_TAIL_BUFFER_SEC);
-  }
-
-  content.timing.gameplayDurations = gameplayDurations;
-  return content;
-}
-
 let cachedContent: ContentConfig | null = null;
 
 export async function loadContentConfig(): Promise<ContentConfig> {
   if (cachedContent) return cachedContent;
   const project = await readJson("_active/project.json") as ContentConfig;
   project.games = await loadRankFiles();
-  cachedContent = computeTiming(project);
+  cachedContent = project;
   return cachedContent;
 }
 
