@@ -52,7 +52,10 @@ cookies-*.txt
 
 # Misc temp
 .episode
+temp_tts_batch.json
 
-# TTS output
-projects/*/tts_output.txt
-projects/*/tts_batch.json
+# Personal files
+*.png
+
+# Project data (generated per-video, not tracked)
+projects/*/
