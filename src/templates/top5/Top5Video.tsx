@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AbsoluteFill, Audio, Img, Sequence, staticFile, prefetch, delayRender, continueRender } from "remotion";
 import { IntroScene } from "./components/IntroScene";
 import { RankTransition } from "./components/RankTransition";

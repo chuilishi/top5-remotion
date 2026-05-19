@@ -20,8 +20,5 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "remotion.config.ts"
-  ],
-  "exclude": [
-    "tools/ui"
   ]
 }

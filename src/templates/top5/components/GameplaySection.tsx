@@ -26,6 +26,11 @@ import { resolveClipLayout, computeVoiceDurations } from "../utils/timeline";
 // 样式参数来源: style.config.yaml → subtitle, fonts.subtitle
 // ─────────────────────────────────────────────
 const SUBTITLE_SS = 2; // 超采样倍率
+const COVER_VIDEO_STYLE: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+};
 
 const Subtitle: React.FC<{
   text: string;
@@ -132,12 +137,11 @@ const statRand = (seed: number): number => random(`stat-${seed}`);
 const StatNumber: React.FC<{
   value: string;
   width: number;
-  height: number;
   fontSizeOverride?: number;
   skewXOverride?: number;
   scaleXOverride?: number;
   spreadRatioOverride?: number;
-}> = ({ value, width, height, fontSizeOverride, skewXOverride = -6, scaleXOverride = 0.88, spreadRatioOverride }) => {
+}> = ({ value, width, fontSizeOverride, skewXOverride = -6, scaleXOverride = 0.88, spreadRatioOverride }) => {
   const frame = useCurrentFrame();
   const chars = value.split("");
 
@@ -506,7 +510,7 @@ const ClipWithKenBurns: React.FC<{
         src={staticFile(src)}
         startFrom={startFrom}
         volume={0}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        style={COVER_VIDEO_STYLE}
       />
     </AbsoluteFill>
   );
@@ -539,7 +543,7 @@ const MultiClipBackground: React.FC<{ game: GameItem }> = ({ game }) => {
           <OffthreadVideo
             src={staticFile(game.videoSrc)}
             volume={0}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={COVER_VIDEO_STYLE}
           />
         </AbsoluteFill>
       );
@@ -703,7 +707,6 @@ export const GameplaySection: React.FC<{
           <StatNumber
             value={stat.value}
             width={width}
-            height={height}
             fontSizeOverride={statFontSizeOverride}
             skewXOverride={statSkewX}
             scaleXOverride={statScaleX}

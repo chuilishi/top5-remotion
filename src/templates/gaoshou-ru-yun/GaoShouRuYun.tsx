@@ -26,7 +26,7 @@ export const GaoShouRuYun: React.FC<GaoShouRuYunProps> = ({
   音乐卡点秒,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
+  const { fps } = useVideoConfig();
 
   const dimOverlayOpacity = (() => {
     if (frame < FRAME.DIM_START) return 0;
@@ -69,7 +69,8 @@ export const GaoShouRuYun: React.FC<GaoShouRuYunProps> = ({
         <Video
           src={staticFile(视频路径)}
           muted
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          objectFit="cover"
+          style={{ width: "100%", height: "100%" }}
         />
       ) : (
         <AbsoluteFill

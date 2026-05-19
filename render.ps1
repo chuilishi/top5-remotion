@@ -29,6 +29,7 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 npx remotion render $compositionId $outFile `
   --codec=h264 `
   --video-bitrate=8M `
+  --sample-rate=48000 `
   --hardware-acceleration=required `
   --x264-preset=slow `
   --offthreadvideo-video-threads=4

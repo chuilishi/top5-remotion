@@ -77,8 +77,6 @@ export const RankTransition: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  const seedForRank = 1.5;
-
   // 渲染单个数字
   const renderNumber = (extraStyle: React.CSSProperties, key: string) => (
     <svg

@@ -24,11 +24,12 @@ $catalog = @{
   "@vitest/browser-playwright" = "4.0.9"
   "playwright" = "1.55.1"
   "vitest" = "4.0.9"
-  "mediabunny" = "1.39.2"
-  "@mediabunny/mp3-encoder" = "1.39.2"
-  "@mediabunny/aac-encoder" = "1.39.2"
-  "@mediabunny/flac-encoder" = "1.39.2"
-  "@mediabunny/ac3" = "1.39.2"
+  "mediabunny" = "1.45.0"
+  "@mediabunny/server" = "1.45.0"
+  "@mediabunny/mp3-encoder" = "1.45.0"
+  "@mediabunny/aac-encoder" = "1.45.0"
+  "@mediabunny/flac-encoder" = "1.45.0"
+  "@mediabunny/ac3" = "1.45.0"
   "@aws-sdk/s3-request-presigner" = "3.986.0"
   "@aws-sdk/credential-provider-ini" = "3.972.5"
   "@aws-sdk/client-s3" = "3.986.0"
@@ -44,6 +45,7 @@ $catalog = @{
 $packages = @(
   "core","cli","renderer","media","player","zod-types",
   "streaming","licensing","bundler","media-parser","media-utils",
+  "timeline-utils","web-renderer",
   "studio","studio-server","studio-shared","enable-scss",
   "compositor-win32-x64-msvc","eslint-config"
 )
@@ -54,7 +56,7 @@ foreach ($p in $packages) {
   if (!(Test-Path $pkgJson)) { Write-Host "SKIP $p"; continue }
 
   $content = Get-Content $pkgJson -Raw
-  $fixed = $content -replace '"workspace:\*"', '"4.0.441"'
+  $fixed = $content -replace '"workspace:\*"', '"4.0.462"'
 
   foreach ($key in $catalog.Keys) {
     $escaped = [regex]::Escape("`"$key`": `"catalog:`"")

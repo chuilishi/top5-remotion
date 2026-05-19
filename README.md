@@ -55,9 +55,9 @@ top5-remotion/
 │       ├── EndingScene.tsx       # Closing sequence
 │       └── Watermark.tsx         # Channel watermark
 ├── tools/
-│   ├── auto-server.mjs     # 🔧 API server (download, clip, analyze)
-│   ├── dev.mjs              # 🚀 Dev launcher (3 services)
-│   └── ui/                  # 🖥️ Editing UI (Vite + React)
+│   ├── bili-mcp.mjs         # Bilibili helper MCP
+│   ├── ffmpeg-mcp.mjs       # FFmpeg helper MCP
+│   └── video-decompose/     # Clip inspection tool
 └── scripts/
     ├── build-config.mjs     # YAML → TypeScript config generator
     └── switch-project.mjs   # Multi-project switcher
@@ -69,17 +69,11 @@ top5-remotion/
 # Install dependencies
 npm install
 
-# Start dev environment (Remotion Studio + API Server + Editing UI)
+# Start Remotion Studio
 npm run dev
 ```
 
-Three services spin up:
-
-| Service | Port | Description |
-|---------|------|-------------|
-| Remotion Studio | `3000` | Live preview & render |
-| Auto Server | `3456` | Download, clip, analyze API |
-| Editing UI | `5173` | Visual timeline editor |
+Remotion Studio opens on port `3000` for live preview and render.
 
 ## 🎬 Video Timeline
 
@@ -184,8 +178,6 @@ npm run project -- --list
 # Switch to a project (sets .current-project + rebuilds TS config)
 npm run project -- game-demo
 ```
-
-Or use the project selector dropdown in the Editing UI.
 
 ## 🎥 Render
 

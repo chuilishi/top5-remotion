@@ -18,6 +18,11 @@ const prand = (s: number) => {
 };
 
 const GTC_SS = 2;
+const COVER_VIDEO_STYLE: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+};
 
 /**
  * 游戏标题卡 — Canvas 2D 渲染 + 2x 超采样
@@ -311,12 +316,14 @@ export const GameTitleCard: React.FC<{
             {game.clips && game.clips.length > 0 ? (
               <OffthreadVideo
                 src={staticFile(game.clips[0].src)}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                volume={0}
+                style={COVER_VIDEO_STYLE}
               />
             ) : game.videoSrc ? (
               <OffthreadVideo
                 src={staticFile(game.videoSrc)}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                volume={0}
+                style={COVER_VIDEO_STYLE}
               />
             ) : (
               <div

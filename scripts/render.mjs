@@ -13,7 +13,14 @@ if (!match) {
   process.exit(1);
 }
 const id = match[1];
-const args = process.argv.slice(2).join(" ");
+const userArgs = process.argv.slice(2);
+const hasSampleRate = userArgs.some(
+  (arg) => arg === "--sample-rate" || arg.startsWith("--sample-rate="),
+);
+const args = [
+  ...userArgs,
+  ...(hasSampleRate ? [] : ["--sample-rate=48000"]),
+].join(" ");
 const cmd = `npx remotion render ${id} ${args}`;
 console.log(`> ${cmd}`);
 execSync(cmd, { stdio: "inherit", cwd: root });

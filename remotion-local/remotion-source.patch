@@ -1,5 +1,5 @@
 diff --git a/packages/compositor/Cargo.lock b/packages/compositor/Cargo.lock
-index 7a456dd..f6bed26 100644
+index 7a456dd62e..f6bed2681f 100644
 --- a/packages/compositor/Cargo.lock
 +++ b/packages/compositor/Cargo.lock
 @@ -167,7 +167,6 @@ dependencies = [
@@ -11,7 +11,7 @@ index 7a456dd..f6bed26 100644
   "bindgen",
   "cc",
 diff --git a/packages/compositor/Cargo.toml b/packages/compositor/Cargo.toml
-index 4c6dcbc..ba9b99f 100644
+index 4c6dcbc2ec..ba9b99f75e 100644
 --- a/packages/compositor/Cargo.toml
 +++ b/packages/compositor/Cargo.toml
 @@ -21,3 +21,5 @@ ffmpeg-next = { git = "https://github.com/remotion-dev/rust-ffmpeg", rev = "8736
@@ -20,8 +20,62 @@ index 4c6dcbc..ba9b99f 100644
  
 +[patch."https://github.com/remotion-dev/rust-ffmpeg-sys"]
 +ffmpeg-sys-next = { path = "../../../temp_analysis/rust-ffmpeg-sys-local" }
+diff --git a/packages/compositor/rust/cuda_ctx.rs b/packages/compositor/rust/cuda_ctx.rs
+new file mode 100644
+index 0000000000..186969a9bf
+--- /dev/null
++++ b/packages/compositor/rust/cuda_ctx.rs
+@@ -0,0 +1,48 @@
++use std::ptr;
++use std::sync::Once;
++
++use ffmpeg_next::ffi::{
++    av_buffer_ref, av_hwdevice_ctx_create, AVBufferRef, AVHWDeviceType,
++};
++
++use crate::global_printer::_print_verbose;
++
++static INIT: Once = Once::new();
++static mut HW_DEVICE_CTX: *mut AVBufferRef = ptr::null_mut();
++static mut CUDA_AVAILABLE: bool = false;
++
++pub fn init_cuda_device_ctx() {
++    INIT.call_once(|| unsafe {
++        let ret = av_hwdevice_ctx_create(
++            &raw mut HW_DEVICE_CTX as *mut *mut AVBufferRef,
++            AVHWDeviceType::AV_HWDEVICE_TYPE_CUDA,
++            ptr::null(),
++            ptr::null_mut(),
++            0,
++        );
++        if ret >= 0 && !HW_DEVICE_CTX.is_null() {
++            CUDA_AVAILABLE = true;
++            let _ = _print_verbose("NVDEC: CUDA device context created successfully");
++        } else {
++            CUDA_AVAILABLE = false;
++            let _ = _print_verbose(&format!(
++                "NVDEC: CUDA device context creation failed (err={}), using software decoding",
++                ret
++            ));
++        }
++    });
++}
++
++pub fn is_cuda_available() -> bool {
++    unsafe { CUDA_AVAILABLE }
++}
++
++pub fn get_cuda_device_ref() -> *mut AVBufferRef {
++    unsafe {
++        if CUDA_AVAILABLE && !HW_DEVICE_CTX.is_null() {
++            av_buffer_ref(HW_DEVICE_CTX)
++        } else {
++            ptr::null_mut()
++        }
++    }
++}
 diff --git a/packages/compositor/rust/main.rs b/packages/compositor/rust/main.rs
-index 7c987d6..a9e1194 100644
+index 7c987d63b1..a9e119409d 100644
 --- a/packages/compositor/rust/main.rs
 +++ b/packages/compositor/rust/main.rs
 @@ -1,4 +1,5 @@
@@ -40,7 +94,7 @@ index 7c987d6..a9e1194 100644
                  .maximum_frame_cache_size_in_bytes
                  .unwrap_or(get_ideal_maximum_frame_cache_size());
 diff --git a/packages/compositor/rust/opened_stream.rs b/packages/compositor/rust/opened_stream.rs
-index 36d413d..1f40861 100644
+index 36d413d108..1f40861222 100644
 --- a/packages/compositor/rust/opened_stream.rs
 +++ b/packages/compositor/rust/opened_stream.rs
 @@ -1,11 +1,12 @@
@@ -106,23 +160,11 @@ index 36d413d..1f40861 100644
  
      let decoder = match is_vp8_or_vp9 {
          Some("vp8") => video.decoder().video_with_codec("libvpx")?,
-diff --git a/packages/media-parser/src/writers/node.ts b/packages/media-parser/src/writers/node.ts
-index 38d845e..bd96b62 100644
---- a/packages/media-parser/src/writers/node.ts
-+++ b/packages/media-parser/src/writers/node.ts
-@@ -84,7 +84,6 @@ const createContent = (filename: string): CreateContent => {
- 			},
- 			getBlob: async () => {
- 				const file = await fs.promises.readFile(filename);
--				// @ts-expect-error
- 				return new Blob([file]);
- 			},
- 		};
 diff --git a/packages/renderer/src/combine-audio.ts b/packages/renderer/src/combine-audio.ts
-index 170effd..7c050a3 100644
+index 932e2c21a1..887bd9ca47 100644
 --- a/packages/renderer/src/combine-audio.ts
 +++ b/packages/renderer/src/combine-audio.ts
-@@ -74,8 +74,6 @@ const encodeAudio = async ({
+@@ -78,8 +78,6 @@ const encodeAudio = async ({
  		fileListTxt,
  		'-c:a',
  		mapAudioCodecToFfmpegAudioCodecName(resolvedAudioCodec),
@@ -132,7 +174,7 @@ index 170effd..7c050a3 100644
  		audioBitrate ? audioBitrate : '320k',
  		'-vn',
 diff --git a/packages/renderer/src/compress-audio.ts b/packages/renderer/src/compress-audio.ts
-index 115644e..a4bb9b2 100644
+index 115644ee45..a4bb9b2ad2 100644
 --- a/packages/renderer/src/compress-audio.ts
 +++ b/packages/renderer/src/compress-audio.ts
 @@ -43,8 +43,6 @@ export const compressAudio = async ({
@@ -145,7 +187,7 @@ index 115644e..a4bb9b2 100644
  	]
  		.filter(truthy)
 diff --git a/packages/renderer/src/get-codec-name.ts b/packages/renderer/src/get-codec-name.ts
-index 25cff3e..b98ef1e 100644
+index 25cff3e615..b98ef1e192 100644
 --- a/packages/renderer/src/get-codec-name.ts
 +++ b/packages/renderer/src/get-codec-name.ts
 @@ -98,6 +98,14 @@ export const getCodecName = ({
@@ -179,10 +221,10 @@ index 25cff3e..b98ef1e 100644
  
  		return {encoderName: 'libx265', hardwareAccelerated: false};
 diff --git a/packages/renderer/src/open-browser.ts b/packages/renderer/src/open-browser.ts
-index 5f1f18d..91f401d 100644
+index c8d5d9406c..328b008ddd 100644
 --- a/packages/renderer/src/open-browser.ts
 +++ b/packages/renderer/src/open-browser.ts
-@@ -232,6 +232,7 @@ export const internalOpenBrowser = async ({
+@@ -236,6 +236,7 @@ export const internalOpenBrowser = async ({
  			'--font-render-hinting=none',
  			'--no-zygote', // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium,
  			'--ignore-gpu-blocklist',
@@ -191,19 +233,24 @@ index 5f1f18d..91f401d 100644
  			typeof forceDeviceScaleFactor === 'undefined'
  				? null
 diff --git a/packages/renderer/src/options/audio-codec.tsx b/packages/renderer/src/options/audio-codec.tsx
-index 49317c2..8e8fe22 100644
+index 49317c2fca..704eced61e 100644
 --- a/packages/renderer/src/options/audio-codec.tsx
 +++ b/packages/renderer/src/options/audio-codec.tsx
-@@ -31,7 +31,7 @@ if (_satisfies) {
+@@ -29,12 +29,7 @@ if (_satisfies) {
+ }
+ 
  // eslint-disable-next-line @typescript-eslint/no-unused-vars
- const audioCodecNames = [
- 	'pcm_s16le',
+-const audioCodecNames = [
+-	'pcm_s16le',
 -	'libfdk_aac',
-+	'aac',
- 	'libmp3lame',
- 	'libopus',
- ] as const;
-@@ -42,7 +42,7 @@ export const mapAudioCodecToFfmpegAudioCodecName = (
+-	'libmp3lame',
+-	'libopus',
+-] as const;
++const audioCodecNames = ['pcm_s16le', 'aac', 'libmp3lame', 'libopus'] as const;
+ 
+ type FfmpegAudioCodecName = (typeof audioCodecNames)[number];
+ 
+@@ -42,7 +37,7 @@ export const mapAudioCodecToFfmpegAudioCodecName = (
  	audioCodec: AudioCodec,
  ): FfmpegAudioCodecName => {
  	if (audioCodec === 'aac') {
@@ -212,51 +259,3 @@ index 49317c2..8e8fe22 100644
  	}
  
  	if (audioCodec === 'mp3') {
-use std::ptr;
-use std::sync::Once;
-
-use ffmpeg_next::ffi::{
-    av_buffer_ref, av_hwdevice_ctx_create, AVBufferRef, AVHWDeviceType,
-};
-
-use crate::global_printer::_print_verbose;
-
-static INIT: Once = Once::new();
-static mut HW_DEVICE_CTX: *mut AVBufferRef = ptr::null_mut();
-static mut CUDA_AVAILABLE: bool = false;
-
-pub fn init_cuda_device_ctx() {
-    INIT.call_once(|| unsafe {
-        let ret = av_hwdevice_ctx_create(
-            &raw mut HW_DEVICE_CTX as *mut *mut AVBufferRef,
-            AVHWDeviceType::AV_HWDEVICE_TYPE_CUDA,
-            ptr::null(),
-            ptr::null_mut(),
-            0,
-        );
-        if ret >= 0 && !HW_DEVICE_CTX.is_null() {
-            CUDA_AVAILABLE = true;
-            let _ = _print_verbose("NVDEC: CUDA device context created successfully");
-        } else {
-            CUDA_AVAILABLE = false;
-            let _ = _print_verbose(&format!(
-                "NVDEC: CUDA device context creation failed (err={}), using software decoding",
-                ret
-            ));
-        }
-    });
-}
-
-pub fn is_cuda_available() -> bool {
-    unsafe { CUDA_AVAILABLE }
-}
-
-pub fn get_cuda_device_ref() -> *mut AVBufferRef {
-    unsafe {
-        if CUDA_AVAILABLE && !HW_DEVICE_CTX.is_null() {
-            av_buffer_ref(HW_DEVICE_CTX)
-        } else {
-            ptr::null_mut()
-        }
-    }
-}
