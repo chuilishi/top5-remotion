@@ -1,5 +1,6 @@
 $root = "e:\Desktop\top5-remotion\remotion-src"
 $out = "e:\Desktop\top5-remotion\remotion-local"
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 $catalog = @{
   "react" = "19.2.3"
@@ -44,6 +45,7 @@ $catalog = @{
 
 $packages = @(
   "core","cli","renderer","media","player","zod-types",
+  "effects","transitions","paths","shapes","light-leaks","starburst","sfx",
   "streaming","licensing","bundler","media-parser","media-utils",
   "timeline-utils","web-renderer",
   "studio","studio-server","studio-shared","enable-scss",
@@ -56,7 +58,7 @@ foreach ($p in $packages) {
   if (!(Test-Path $pkgJson)) { Write-Host "SKIP $p"; continue }
 
   $content = Get-Content $pkgJson -Raw
-  $fixed = $content -replace '"workspace:\*"', '"4.0.462"'
+  $fixed = $content -replace '"workspace:\*"', '"4.0.470"'
 
   foreach ($key in $catalog.Keys) {
     $escaped = [regex]::Escape("`"$key`": `"catalog:`"")
@@ -64,13 +66,13 @@ foreach ($p in $packages) {
     $fixed = $fixed -replace $escaped, $replacement
   }
 
-  Set-Content $pkgJson -Value $fixed -NoNewline
+  [System.IO.File]::WriteAllText($pkgJson, $fixed, $utf8NoBom)
 
   Push-Location $dir
   $tgz = npm pack --pack-destination $out 2>$null
   Pop-Location
 
-  Set-Content $pkgJson -Value $content -NoNewline
+  [System.IO.File]::WriteAllText($pkgJson, $content, $utf8NoBom)
 
   $size = if (Test-Path (Join-Path $out $tgz)) { [math]::Round((Get-Item (Join-Path $out $tgz)).Length/1KB, 0) } else { "?" }
   Write-Host "  $p -> $tgz (${size}KB)"

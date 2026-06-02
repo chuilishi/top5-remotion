@@ -2,7 +2,6 @@
   <img src="https://img.shields.io/badge/Remotion-4.0-6C47FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMloiIGZpbGw9IiNmZmYiLz48L3N2Zz4=" alt="Remotion 4.0"/>
   <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 18"/>
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite"/>
 </p>
 
 <h1 align="center">🏆 Top 5 Remotion</h1>
@@ -56,8 +55,7 @@ top5-remotion/
 │       └── Watermark.tsx         # Channel watermark
 ├── tools/
 │   ├── bili-mcp.mjs         # Bilibili helper MCP
-│   ├── ffmpeg-mcp.mjs       # FFmpeg helper MCP
-│   └── video-decompose/     # Clip inspection tool
+│   └── ffmpeg-mcp.mjs       # FFmpeg helper MCP
 └── scripts/
     ├── build-config.mjs     # YAML → TypeScript config generator
     └── switch-project.mjs   # Multi-project switcher
