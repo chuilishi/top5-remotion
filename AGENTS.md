@@ -101,8 +101,8 @@ Remotion 4.0.525，全部来自官方 npm registry。**不再使用本地源码 
 | NVENC 编码（`get-codec-name.ts`） | 上游 **4.0.484** 已加入 Linux/Windows NVENC |
 | FFmpeg 替换为 BtbN build | 不需要，官方 compositor 内置 `h264_nvenc` / `hevc_nvenc` |
 | `libfdk_aac` → 原生 `aac` | 不需要，官方 FFmpeg 含 `libfdk_aac`（BtbN build 是 `--disable-libfdk-aac` 才要改） |
-| Rust NVDEC 解码 | 未进上游，但当前驱动拿不到可用 CUDA，实测无收益 |
-| `--enable-gpu-rasterization` | 未进上游。如确需，用 `patch-package` 打一行补丁，不要重新 fork |
+| Rust NVDEC 解码 | 未进上游。FFmpeg 侧 NVDEC 可用，但 Remotion 解码路径实测无收益（见下方解码数据） |
+| `--enable-gpu-rasterization` | 未进上游，**且从未实测过收益**。如确需，用 `patch-package` 打一行补丁，不要重新 fork |
 
 ### NVENC 前提条件
 
@@ -143,7 +143,7 @@ for i in $(seq 1 120); do cat /tmp/f.jpg; done > /tmp/frames.mjpeg
 （各跑两轮、第二轮反序；日志确认 `@remotion/media` 未回退，走的是真 WebCodecs）。
 官方虽推荐 `@remotion/media`，但 headless Chrome 似乎没有启用硬件视频解码——
 FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
-**结论：top5 模板继续用 `<OffthreadVideo>`。** 驱动升级前后各测过一次，两次结论一致。
+驱动升级前后各测过一次，两次数据一致。但性能不是最终的决定因素——见下一节。
 
 ### ⚠️ `@remotion/media` 无法解码 NVENC 编出的 H.264
 
@@ -167,9 +167,6 @@ FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
 但 OBS/ShadowPlay 录制且未经转码的片源、以及把本项目 NVENC 成片回灌当素材，都会触发。
 **这是继续用 `<OffthreadVideo>` 的主要理由**（性能只是次要因素）。
 
-另注：若将来再迁移，`@remotion/media` 的 `<Video>` 要求用 `objectFit` prop，
-不能把 `objectFit` 写进 `style`，否则每个渲染 tab 都会刷告警。
-
 ### 渲染
 
 ```powershell
@@ -177,13 +174,14 @@ FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
 ```
 
 配置：`remotion.config.ts` 使用 JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发、
-OffthreadVideo 缓存封顶 4GB（原来的 70% 物理内存会在 16GB 机器上触发 OOM）
+OffthreadVideo 缓存沿用上游自适应默认值（理由见该文件注释）
 
 ## 关键约束
 
 - `src/templates/active.ts` 是自动生成的，不要手动编辑
 - `public/_active/` 是自动生成的，不要手动编辑
 - 视频文件用 `<OffthreadVideo>` 必须 `volume={0}`
+- `@remotion/media` 的 `<Video>`（`gaoshou-ru-yun` 模板在用）要用 `objectFit` prop，不能把 `objectFit` 写进 `style`
 - fps = 60
 - TTS 语速：7.3 字/秒（Fish Audio, speed=1.3, atempo=1.1）
 - 用 `staticFile()` 引用 public/ 下的文件

@@ -1,4 +1,0 @@
-[submodule "remotion-src"]
-	path = remotion-src
-	url = https://github.com/chuilishi/remotion-custom.git
-	branch = main
