@@ -139,6 +139,20 @@ for i in $(seq 1 120); do cat /tmp/f.jpg; done > /tmp/frames.mjpeg
 编码：**NVENC 42s vs libx264(fast) 51s，快 18%**。
 所以 `render.ps1` 用 `--hardware-acceleration=required`（硬报错优于静默回退）。
 
+**不要传 `--x264-preset`。** Remotion 无条件把它转成 ffmpeg 的 `-preset`
+（`ffmpeg-args.js` 里没有按 `hardwareAccelerated` 门控），所以它会落到 `h264_nvenc` 上，
+而在 NVENC 语义里 `slow` 是 legacy 的「hq 2 passes」。实测 600 帧 1080p60：
+
+| preset | 耗时 | 输出 |
+|---|---|---|
+| 默认 `p4` | 2648 / 2669 ms | 391 KB |
+| `slow` | 3084 / 3130 ms | 433 KB |
+| `p7`（NVENC 最高质量） | 2884 / 2885 ms | 426 KB |
+
+`slow` 比默认慢 17%，也比质量更高的 `p7` 慢——纯亏。而 `p7` 无法经此 flag 传入：
+`x264PresetOptions` 是只收 x264 名字的硬白名单，传 NVENC 的 `pN` 会抛 `TypeError`。
+真要调 NVENC 质量只能走 `--ffmpeg-override`。
+
 解码：**`<OffthreadVideo>` 107s vs `@remotion/media` 的 `<Video>` 115s，OffthreadVideo 快 8%**
 （各跑两轮、第二轮反序；日志确认 `@remotion/media` 未回退，走的是真 WebCodecs）。
 官方虽推荐 `@remotion/media`，但 headless Chrome 似乎没有启用硬件视频解码——
