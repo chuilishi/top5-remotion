@@ -87,42 +87,70 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 流程：用户提供排名 → copywriter → material-researcher × 5 调研 → top5-video 填 YAML + 搜 stat → TTS → clip-editor × 5 → 合并渲染
 
-## 自定义 Remotion（本地源码构建）
+## Remotion 依赖（官方 npm 包）
 
-所有 Remotion 包都从本地源码构建，不依赖 npm registry。
+Remotion 4.0.525，全部来自官方 npm registry。**不再使用本地源码 fork**。
 
-### 架构
+历史：项目曾从 `remotion-src/` 源码构建 17 个 tarball（见 `remotion-local/remotion-source.patch`），
+为的是拿到 NVENC 硬件编码。现在这些改动要么已进上游，要么已无必要：
 
-- 源码：`remotion-src/`（Remotion v4.0.441 monorepo）
-- 构建产物：`remotion-local/*.tgz`（17 个 tarball）
-- `package.json` 通过 `file:remotion-local/xxx.tgz` + `overrides` 引用本地包
-- 构建工具：Bun 1.3.3 + Turbo 2.8.20 + tsgo
+| 原改动 | 现状 |
+|---|---|
+| NVENC 编码（`get-codec-name.ts`） | 上游 **4.0.484** 已加入 Linux/Windows NVENC |
+| FFmpeg 替换为 BtbN build | 不需要，官方 compositor 内置 `h264_nvenc` / `hevc_nvenc` |
+| `libfdk_aac` → 原生 `aac` | 不需要，官方 FFmpeg 含 `libfdk_aac`（BtbN build 是 `--disable-libfdk-aac` 才要改） |
+| Rust NVDEC 解码 | 未进上游，但当前驱动拿不到可用 CUDA，实测无收益 |
+| `--enable-gpu-rasterization` | 未进上游。如确需，用 `patch-package` 打一行补丁，不要重新 fork |
 
-### 源码改动
+### NVENC 前提条件
 
-1. **NVENC 直接编码**（`renderer/src/get-codec-name.ts`）：Windows 下 h264→h264_nvenc, h265→hevc_nvenc
-2. **GPU 光栅化**（`renderer/src/open-browser.ts`）：添加 `--enable-gpu-rasterization` flag
-3. **NVDEC 硬件解码**（`compositor/rust/cuda_ctx.rs`, `opened_stream.rs`）：Rust compositor CUDA 加速
-4. **音频编码器**（`renderer/src/options/audio-codec.tsx`, `compress-audio.ts`, `combine-audio.ts`）：`libfdk_aac` → 原生 `aac`（BtbN FFmpeg 不含 libfdk_aac）
-5. **FFmpeg 替换**（`compositor-win32-x64-msvc/`）：BtbN 7.1 GPL shared build（CUDA/NVDEC/NVENC）
+**NVIDIA 驱动必须 >= 551.76**（FFmpeg 7.1 的 `h264_nvenc` 要求 NVENC API 12.2）。
 
-### 重新构建流程
+当前机器：GTX 1060 6GB + **Studio Driver 581.57**（2025-10-09），NVENC / NVDEC 均已验证可用。
+注意 GTX 1060 是 Pascal，581.x 是最后一代功能驱动，之后只有安全更新（到 2028-10），不要再指望升级。
 
+历史教训：此前驱动是 391.35（2018 年），只有 NVENC API 8.1，
+`--hardware-acceleration=required` 会直接崩在 `Error: write EOF`。
+**如果哪天渲染又崩在这个错误上，第一个要查的就是驱动版本。**
+
+验证方法（查驱动版本）：
 ```powershell
-cd remotion-src
-bun install                                    # 安装依赖
-npx turbo run make --filter="@remotion/cli..." # 构建（~20s）
-cd ..; powershell -File remotion-local/repack.ps1  # 打包 tarball
-cd top5-remotion; npm install                  # 安装本地包
+(Get-CimInstance Win32_VideoController | Where-Object Name -like 'NVIDIA*').DriverVersion
+nvidia-smi --query-gpu=name,driver_version --format=csv
 ```
+
+实测 NVENC / NVDEC（`-f lavfi -i nullsrc` 走不到编码器，必须喂真实帧）：
+```bash
+FF=node_modules/@remotion/compositor-win32-x64-msvc/ffmpeg.exe
+"$FF" -y -i public/background.jpg -vf scale=1920:1080 -q:v 2 /tmp/f.jpg
+for i in $(seq 1 120); do cat /tmp/f.jpg; done > /tmp/frames.mjpeg
+# 编码：应正常出片
+"$FF" -r 60 -f image2pipe -vcodec mjpeg -i /tmp/frames.mjpeg -c:v h264_nvenc -b:v 12M -y /tmp/t.mp4
+# 解码：应打印 "NVDEC capabilities" 和 "pix_fmt: cuda"
+"$FF" -v verbose -hwaccel cuda -i /tmp/t.mp4 -c:v libx264 -preset ultrafast -y /tmp/t2.mp4
+```
+驱动过旧的症状：编码报 `Driver does not support the required nvenc API version`，
+解码报 `Failed loading nvcuvid`（且**静默回退软解**，退出码为 0，不会报错）。
+
+### 实测数据（581.57 驱动，1200 帧 1080p60）
+
+编码：**NVENC 42s vs libx264(fast) 51s，快 18%**。
+所以 `render.ps1` 用 `--hardware-acceleration=required`（硬报错优于静默回退）。
+
+解码：**`<OffthreadVideo>` 107s vs `@remotion/media` 的 `<Video>` 115s，OffthreadVideo 快 8%**
+（各跑两轮、第二轮反序；日志确认 `@remotion/media` 未回退，走的是真 WebCodecs）。
+官方虽推荐 `@remotion/media`，但 headless Chrome 似乎没有启用硬件视频解码——
+FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
+**结论：top5 模板继续用 `<OffthreadVideo>`。** 驱动升级前后各测过一次，两次结论一致。
 
 ### 渲染
 
 ```powershell
-.\render.ps1   # 一步 NVENC 直接编码（不再两步 ProRes+NVENC）
+.\render.ps1   # --hardware-acceleration=required，NVENC 失效会硬报错
 ```
 
-配置：`remotion.config.ts` 使用 JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发
+配置：`remotion.config.ts` 使用 JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发、
+OffthreadVideo 缓存封顶 4GB（原来的 70% 物理内存会在 16GB 机器上触发 OOM）
 
 ## 关键约束
 

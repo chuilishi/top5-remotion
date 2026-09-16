@@ -1,4 +1,6 @@
 # 渲染视频 (一步渲染: NVENC 直接编码)
+# NVENC 需要 NVIDIA 驱动 >= 551.76 (FFmpeg 7.1 要求 NVENC API 12.2)
+# 用 required 而非 if-possible: NVENC 若失效会硬报错，避免静默退回 libx264 而没人察觉
 # 用法: .\render.ps1
 
 $ErrorActionPreference = "Stop"

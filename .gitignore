@@ -13,8 +13,7 @@ temp_analysis/
 temp_hq/
 bing/
 
-# Local Remotion build (tarballs tracked, repack script tracked)
-# remotion-local/*.tgz are committed as build artifacts
+# 不再使用本地 Remotion fork，只保留 remotion-local/remotion-source.patch 作为历史记录
 
 # Generated config (rebuild with: npm run config)
 src/templates/active.ts
