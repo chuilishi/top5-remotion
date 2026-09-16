@@ -180,11 +180,8 @@ npm run project -- game-demo
 ## 🎥 Render
 
 ```bash
-# Production render
+# Render (settings live in remotion.config.ts)
 npm run build
-
-# Fast preview render
-npm run build:fast
 ```
 
 ## 🤖 AI Agent Integration

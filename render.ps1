@@ -1,8 +1,8 @@
 # 渲染视频 (一步渲染: NVENC 直接编码)
-# 用 required 而非 if-possible: NVENC 若失效会硬报错，避免静默退回 libx264 而没人察觉
-# 不传 --x264-preset: Remotion 无条件把它转成 ffmpeg -preset，NVENC 下 slow=legacy「hq 2 passes」，
-# 实测比默认 p4 慢 17%，也比质量更高的 p7 慢；而 p7 无法经此 flag 传入（白名单只收 x264 名字）
-# (NVENC 的驱动版本要求与排查方法见 CLAUDE.md)
+# 编码设置（codec / bitrate / sample-rate / 硬件加速）统一在 remotion.config.ts，
+# 本脚本只传没有 Config setter 的 --offthreadvideo-video-threads。
+# 不要在这里加 --x264-preset：Remotion 会把它无条件转成 ffmpeg -preset 交给 NVENC，
+# 实测 slow 比默认 p4 慢 17%（详见 AGENTS.md 实测数据一节）。
 # 用法: .\render.ps1
 
 $ErrorActionPreference = "Stop"
@@ -31,11 +31,7 @@ Write-Host "输出: $outFile`n"
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 npx remotion render $compositionId $outFile `
-  --codec=h264 `
-  --video-bitrate=8M `
-  --sample-rate=48000 `
-  --hardware-acceleration=required `
-  --offthreadvideo-video-threads=4
+  --offthreadvideo-video-threads=8
 $sw.Stop()
 
 if ($LASTEXITCODE -ne 0) {

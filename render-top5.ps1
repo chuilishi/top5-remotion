@@ -1,6 +1,6 @@
 # Top5 渲染 (封面 + 一步 NVENC 直接编码)
+# 编码设置统一在 remotion.config.ts，详见 render.ps1 顶部注释
 # 用法: .\render-top5.ps1
-# 不传 --x264-preset: NVENC 下反而更慢，详见 render.ps1 顶部注释
 
 $ErrorActionPreference = "Stop"
 $projectRoot = $PSScriptRoot
@@ -44,10 +44,7 @@ Write-Host "输出: $outFile`n"
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 npx remotion render $compositionId $outFile `
-  --codec=h264 `
-  --video-bitrate=8M `
-  --hardware-acceleration=required `
-  --offthreadvideo-video-threads=4
+  --offthreadvideo-video-threads=8
 $sw.Stop()
 
 if ($LASTEXITCODE -ne 0) {

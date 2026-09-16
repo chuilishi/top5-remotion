@@ -187,8 +187,15 @@ FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
 .\render.ps1   # --hardware-acceleration=required，NVENC 失效会硬报错
 ```
 
-配置：`remotion.config.ts` 使用 JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发、
-OffthreadVideo 缓存沿用上游自适应默认值（理由见该文件注释）
+**所有编码设置集中在 `remotion.config.ts`**：JPEG 截图（比 PNG 快）、ANGLE OpenGL、16 并发、
+h264 / 8M 码率 / 48kHz / `hardwareAcceleration: "required"`，
+OffthreadVideo 缓存沿用上游自适应默认值（理由见该文件注释）。
+
+三个渲染入口（`render.ps1`、`render-top5.ps1`、`npm run build`）都会加载该文件，
+因此只在命令行传 `--offthreadvideo-video-threads=8`（这一项没有对应的 Config setter）。
+此前这些设置散落在三处且并不一致——码率 8M vs 10M、sample-rate 有的有有的没有、
+硬件加速只有两个 `.ps1` 开了（`npm run build` 实际在用 libx264 软编）。
+**新增编码设置请改 `remotion.config.ts`，不要加回到脚本里。**
 
 ## 关键约束
 

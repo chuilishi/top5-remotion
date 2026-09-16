@@ -13,14 +13,8 @@ if (!match) {
   process.exit(1);
 }
 const id = match[1];
-const userArgs = process.argv.slice(2);
-const hasSampleRate = userArgs.some(
-  (arg) => arg === "--sample-rate" || arg.startsWith("--sample-rate="),
-);
-const args = [
-  ...userArgs,
-  ...(hasSampleRate ? [] : ["--sample-rate=48000"]),
-].join(" ");
+// 编码设置（codec / bitrate / sample-rate / 硬件加速）统一在 remotion.config.ts
+const args = process.argv.slice(2).join(" ");
 const cmd = `npx remotion render ${id} ${args}`;
 console.log(`> ${cmd}`);
 execSync(cmd, { stdio: "inherit", cwd: root });

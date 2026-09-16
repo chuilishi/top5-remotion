@@ -9,8 +9,7 @@
     "prestart": "npm run config",
     "start": "npx remotion studio",
     "prebuild": "npm run config",
-    "build": "node scripts/render.mjs out/video.mp4 --video-bitrate=10M --x264-preset=veryfast --offthreadvideo-video-threads=4",
-    "build:fast": "node scripts/render.mjs out/video.mp4 --video-bitrate=10M --x264-preset=veryfast --offthreadvideo-video-threads=4",
+    "build": "node scripts/render.mjs out/video.mp4 --offthreadvideo-video-threads=8",
     "upgrade": "npx remotion upgrade",
     "dev": "npm run start",
     "relay": "node prompt-relay/server.mjs"
