@@ -91,8 +91,10 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 Remotion 4.0.525，全部来自官方 npm registry。**不再使用本地源码 fork**。
 
-历史：项目曾从 `remotion-src/` 源码构建 17 个 tarball（见 `remotion-local/remotion-source.patch`），
-为的是拿到 NVENC 硬件编码。现在这些改动要么已进上游，要么已无必要：
+历史：项目曾从 `remotion-src/` 源码构建 17 个 tarball，为的是拿到 NVENC 硬件编码。
+源码保存在私有仓库 `chuilishi/remotion-custom`（未删除）；本地的 `remotion-local/` 已整个移除，
+补丁内容可用 `git show 642b7a2:remotion-local/remotion-source.patch` 取回。
+这些改动现在要么已进上游，要么已无必要：
 
 | 原改动 | 现状 |
 |---|---|
@@ -142,6 +144,31 @@ for i in $(seq 1 120); do cat /tmp/f.jpg; done > /tmp/frames.mjpeg
 官方虽推荐 `@remotion/media`，但 headless Chrome 似乎没有启用硬件视频解码——
 FFmpeg 侧 NVDEC 可用不代表 Chrome 的 WebCodecs 会用它。
 **结论：top5 模板继续用 `<OffthreadVideo>`。** 驱动升级前后各测过一次，两次结论一致。
+
+### ⚠️ `@remotion/media` 无法解码 NVENC 编出的 H.264
+
+曾尝试迁移到 `@remotion/media` 的 `<Video>`，实测发现它**解不了 NVENC 编码的 H.264**，
+表现为 `delayRender` 挂 28 秒后整个渲染中止，错误信息只说
+`Timeout while extracting frame at time X from ...`，不提编码器或像素格式，极难定位。
+
+隔离过程（同一批帧，逐项排除）：
+
+| 素材 | 色域 | `@remotion/media` | `OffthreadVideo` |
+|---|---|---|---|
+| NVENC，静止内容 | pc | ❌ 超时 | ✅ |
+| NVENC，有运动内容 | pc | ❌ 超时 | ✅ |
+| libx264，静止内容 | tv | ✅ | — |
+| libx264，静止内容 | pc | ✅ | — |
+
+已排除：并发（`--concurrency=1` 同样失败）、关键帧结构（补成每秒一个 IDR 仍失败）、
+色域（libx264 全色域正常）、内容退化（有真实运动仍失败）。变量锁定在**编码器**。
+
+影响：`@clip-editor` 下载的是平台转码流（libx264/VP9/AV1），日常碰不到；
+但 OBS/ShadowPlay 录制且未经转码的片源、以及把本项目 NVENC 成片回灌当素材，都会触发。
+**这是继续用 `<OffthreadVideo>` 的主要理由**（性能只是次要因素）。
+
+另注：若将来再迁移，`@remotion/media` 的 `<Video>` 要求用 `objectFit` prop，
+不能把 `objectFit` 写进 `style`，否则每个渲染 tab 都会刷告警。
 
 ### 渲染
 
