@@ -6,7 +6,7 @@
  * Tools:
  *   bili_search      — Search videos or users on Bilibili
  *   bili_user_videos — List videos from an UP主
- *   bili_download    — Download video(s) via BBDown with serial queue
+ *   bili_download    — Download video(s) via yutto with serial queue
  */
 
 import { spawn } from 'child_process';
@@ -79,13 +79,13 @@ const TOOLS = [
   },
   {
     name: 'bili_download',
-    description: 'Download Bilibili video(s) via BBDown. Requests are automatically queued — only one download runs at a time.',
+    description: 'Download Bilibili video(s) via yutto, saved as {BV号}.mp4 (H.264). Requests are automatically queued — only one download runs at a time.',
     inputSchema: {
       type: 'object',
       properties: {
         urls:       { type: 'array', items: { type: 'string' }, description: 'Bilibili video URLs or BV IDs to download' },
         output_dir: { type: 'string', description: 'Output directory (e.g. "temp_analysis/sanguosha")' },
-        quality:    { type: 'string', enum: ['preview', 'hq'], description: '"preview" = 360P, "hq" = 1080P 高码率', default: 'preview' },
+        quality:    { type: 'string', enum: ['preview', 'hq'], description: '"preview" = 360P, "hq" = 1080P（非大会员拿不到 1080P+ 高码率）', default: 'preview' },
       },
       required: ['urls', 'output_dir'],
     },
@@ -102,12 +102,12 @@ const TOOLS = [
     },
   },
   {
-    name: 'bbdown_raw',
-    description: 'Run BBDown with arbitrary arguments. Downloads are automatically queued.',
+    name: 'yutto_raw',
+    description: 'Run yutto with arbitrary arguments. Downloads are automatically queued.',
     inputSchema: {
       type: 'object',
       properties: {
-        args: { type: 'array', items: { type: 'string' }, description: 'BBDown command-line arguments (e.g. ["BV1xxx", "--work-dir", "temp_analysis/", "-q", "1080P 高码率"])' },
+        args: { type: 'array', items: { type: 'string' }, description: 'yutto command-line arguments (e.g. ["BV1xxx", "-d", "temp_analysis/", "-q", "80"])' },
       },
       required: ['args'],
     },
@@ -119,17 +119,10 @@ const TOOLS = [
 // ---------------------------------------------------------------------------
 
 // B站是境内站，必须直连：经境外代理出去会被风控拦成 HTTP 412。
-// PYTHONUTF8 让 bili（Python）在管道下输出 UTF-8，否则 Windows 上是 GBK。
+// PYTHONUTF8 让 bili / yutto（都是 Python）在管道下输出 UTF-8，否则 Windows 上是 GBK。
 const childEnv = { ...process.env, PYTHONUTF8: '1' };
 for (const k of Object.keys(childEnv)) {
   if (/^(https?|all)_proxy$/i.test(k)) delete childEnv[k];
-}
-
-// BBDown（.NET）在中文 Windows 的管道下输出 GBK，且没有开关可改。
-function decode(cmd, chunks) {
-  const buf = Buffer.concat(chunks);
-  const encoding = cmd === 'BBDown' && process.platform === 'win32' ? 'gbk' : 'utf-8';
-  return new TextDecoder(encoding).decode(buf);
 }
 
 function runCmd(cmd, args) {
@@ -139,10 +132,9 @@ function runCmd(cmd, args) {
     proc.stdout.on('data', (d) => { stdout.push(d); });
     proc.stderr.on('data', (d) => { stderr.push(d); });
     proc.on('close', (code) => {
-      const out = decode(cmd, stdout);
+      const out = Buffer.concat(stdout).toString('utf-8');
       if (code === 0) return resolve(out);
-      // BBDown 把错误写在 stdout，stderr 是空的
-      const detail = decode(cmd, stderr).trim() || out.trim().slice(-500);
+      const detail = Buffer.concat(stderr).toString('utf-8').trim() || out.trim().slice(-500);
       reject(new Error(`${cmd} exited ${code}: ${detail.slice(0, 500)}`));
     });
     proc.on('error', reject);
@@ -197,7 +189,8 @@ async function handleUserVideos({ uid_or_name, max_results = 30 }) {
 }
 
 async function handleDownload({ urls, output_dir, quality = 'preview' }) {
-  const qualityStr = quality === 'hq' ? '1080P 高码率, 1080P 高清' : '360P 流畅';
+  // yutto 取不到请求的清晰度时自动往下降：112(1080P+) 需大会员，否则落到 80(1080P)
+  const qn = quality === 'hq' ? '112' : '16';
 
   const results = await enqueueDownload(async () => {
     const out = [];
@@ -205,13 +198,15 @@ async function handleDownload({ urls, output_dir, quality = 'preview' }) {
       const bvid = extractBvid(url);
       const args = [
         url.startsWith('http') ? url : `https://www.bilibili.com/video/${bvid}/`,
-        '--work-dir', output_dir,
-        '-q', qualityStr,
-        '--skip-subtitle', '--skip-cover', '--skip-ai',
-        '-F', bvid,
+        '-d', output_dir,
+        '-q', qn,
+        '--vcodec', 'avc:copy',
+        '-tp', '{bvid}',
+        '--no-danmaku', '--no-subtitle', '--no-cover', '--no-chapter-info',
+        '--no-color', '--no-progress',
       ];
       try {
-        const output = await runCmd('BBDown', args);
+        const output = await runCmd('yutto', args);
         out.push({ bvid, status: 'ok', output: output.slice(-500) });
       } catch (err) {
         out.push({ bvid, status: 'error', error: err.message.slice(0, 500) });
@@ -228,8 +223,8 @@ async function handleBiliRaw({ args }) {
   return output.slice(-4000);
 }
 
-async function handleBBDownRaw({ args }) {
-  const output = await enqueueDownload(() => runCmd('BBDown', args));
+async function handleYuttoRaw({ args }) {
+  const output = await enqueueDownload(() => runCmd('yutto', args));
   return output.slice(-4000);
 }
 
@@ -238,7 +233,7 @@ const HANDLERS = {
   bili_user_videos: handleUserVideos,
   bili_download: handleDownload,
   bili_raw: handleBiliRaw,
-  bbdown_raw: handleBBDownRaw,
+  yutto_raw: handleYuttoRaw,
 };
 
 // ---------------------------------------------------------------------------

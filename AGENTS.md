@@ -96,9 +96,10 @@ Top5Video：让 Claude Code 读 `docs/top5-solo.md` 并按它执行（例：「�
 yt-dlp 前提：`uv tool install "yt-dlp[default]"`（`[default]` 带上 JS 挑战求解脚本），
 且 `%APPDATA%\yt-dlp\config.txt` 里有 `--js-runtimes node`（yt-dlp 默认只认 deno）。
 
-bili 前提：`uv tool install bilibili-cli`（搜索）+ `winget install nilaoda.BBDown`（下载，会连带装 ffmpeg）。
-两者都要各自扫码登录一次：`bili login`（不登录时 `bili_user_videos` 会被风控拦成验证页）、`BBDown login`（不登录拿不到 1080P）。
-`bili-mcp.mjs` 会剥掉子进程的代理环境变量——B站必须直连，经境外代理会 HTTP 412。
+bili 前提：`uv tool install bilibili-cli`（搜索）+ `uv tool install yutto`（下载，合并音视频要 PATH 里有 ffmpeg：`winget install Gyan.FFmpeg`）。
+两者都要各自扫码登录一次：`bili login`（不登录时 `bili_user_videos` 会被风控拦成验证页）、`yutto auth login`（不登录拿不到 1080P；`yutto auth status` 查状态）。
+`bili-mcp.mjs` 会剥掉子进程的代理环境变量——B站必须直连，经境外代理会 HTTP 412（yutto 同样，手动跑前先清掉 `http(s)_proxy`）。
+非大会员账号，`bili_download` 的 `hq` 实际拿到的是 1080P（约 3 Mbps），不是 1080P+ 高码率。
 
 gemini-media 前提：`Desktop/gemini-go` 在 `:8787` 运行，走 `/v1`（旧的 `/internal/v1` 已不存在，会返回 WebUI 的 HTML）。
 
