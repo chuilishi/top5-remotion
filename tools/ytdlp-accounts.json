@@ -1,17 +1,14 @@
 [
   {
     "id": "main",
-    "cookies_from_browser": "firefox",
-    "proxy": null
+    "cookies_from_browser": "firefox"
   },
   {
     "id": "canary",
-    "cookies": "cookies-canary.txt",
-    "proxy": "socks5://127.0.0.1:7901"
+    "cookies": "cookies-canary.txt"
   },
   {
     "id": "chrome",
-    "cookies": "cookies-chrome.txt",
-    "proxy": "socks5://127.0.0.1:7902"
+    "cookies": "cookies-chrome.txt"
   }
 ]

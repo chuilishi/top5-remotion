@@ -5,12 +5,13 @@ Remotion 项目：多模板视频生成工具。
 ## 核心命令
 
 ```bash
-npm run config          # YAML → TypeScript 配置（修改 YAML 后必须运行）
+npm run config          # YAML → public/_active/ JSON（修改 YAML 后必须运行）
 npm run project -- <name>  # 切换项目（自动包含 config + 切换模板）
 npm run start           # Remotion Studio 预览（自动打开当前项目的模板）
 npm run dev             # 启动 Remotion Studio
 npm run build           # 最终渲染
-uv run tts_gen.py --batch <file.json>  # Fish Audio TTS 批量生成
+uv run tts_gen.py --batch <file.json> | node scripts/fill-timeline.mjs <name>  # TTS + 填时间轴
+node scripts/cut-clips.mjs <rank-yaml> <clips-json> [--sections]  # Gemini 选片 JSON → 下载清单 / 切片 + 写 clips
 ```
 
 ## 项目结构
@@ -19,10 +20,13 @@ uv run tts_gen.py --batch <file.json>  # Fish Audio TTS 批量生成
 projects/{name}/             ← 每个视频项目
   project.yaml               ← template + 项目元数据
   rank_{1-5}_{folder}.yaml   ← Top5 模板专用数据文件
-public/{folder}/             ← 视频切片 + 音频文件
+public/{name}/{folder}/      ← 视频切片 + 音频文件
+temp_analysis/               ← 调研预览文件（{name}/{folder}/）与高画质源（hq/），不入库
 scripts/
-  build-config.mjs           ← project.yaml → active.ts + public/_active/content.json
-  switch-project.mjs         ← 切换项目 + 触发 config
+  build-config.mjs           ← project.yaml + rank YAML → active.ts + public/_active/（project.json、ranks/*.json）
+  switch-project.mjs         ← 切换项目（写 .current-project）+ 触发 config
+  fill-timeline.mjs          ← TTS 输出 → rank YAML 所有时间字段
+  cut-clips.mjs              ← Gemini 选片结果 → 分段下载清单 / 切片 + rank YAML clips
 src/
   Root.tsx                    ← 注册所有 Composition（多模板）
   templates/
@@ -49,9 +53,9 @@ titleLine1: 全球前五
 
 ### 运行时配置加载
 
-`npm run config` 生成 `public/_active/content.json`（纯数据，无计算）。
-`calculateMetadata` 在运行时 fetch 该 JSON，计算时序（72s 卡点、buffer 分配），
-通过 props 传递给组件。无代码生成。
+`npm run config` 把 `project.yaml` 和 rank YAML 转成 `public/_active/project.json` 与 `public/_active/ranks/*.json`。
+Top5Video 模板在这一步额外计算 `timing.gameplayDurations`（72s 卡点校验 + buffer 分配，结果同时打印在终端）。
+`calculateMetadata` 在运行时 fetch 这些 JSON，算出总帧数，通过 props 传递给组件。无代码生成。
 
 ### 添加新模板
 
@@ -75,17 +79,33 @@ titleLine1: 全球前五
 
 rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然后：
 1. `npm run project -- <name>`（或 `npm run config` 如果不切换项目）
-2. 生成 `public/_active/content.json`（纯数据），运行时 `calculateMetadata` 加载并计算时序
+2. 生成 `public/_active/` 下的 JSON（含 gameplayDurations），运行时 `calculateMetadata` 加载
 
-## Agent 协作
+## 视频制作流程（Claude Code）
 
-5 个 VS Code Copilot agent（`.github/agents/`）：
-- `@top5-video` — 全流程编排（调度其他 agent）
-- `@material-researcher` — 素材调研（搜索视频素材 + 下载验证）
-- `@copywriter` — 中文文案（内嵌 Sodabobo_ 风格参考 → 纯凭风格直觉写作，不接触研究资料）
-- `@clip-editor` — 精确选片（Gemini 视频分析 → 高画质下载 → 切片）
+Top5Video：让 Claude Code 读 `docs/top5-solo.md` 并按它执行（例：「读 docs/top5-solo.md，做一期：主题 + #5→#1 排名」）。
+一个模型走完整条流程：建项目 → 写文案 → 查 stat → 找素材 × 5 → TTS + fill-timeline → 卡点校验 → 选片切片 × 5 → `npm run config`。
 
-流程：用户提供排名 → copywriter → material-researcher × 5 调研 → top5-video 填 YAML + 搜 stat → TTS → clip-editor × 5 → 合并渲染
+- `docs/top5-solo.md` — 总流程。不复制各阶段规范，到对应阶段再去读下面三份
+- `docs/top5-specs/copywriter.md` — 文案风格（内嵌 10 期精选参考，纯凭风格直觉写，不接触研究资料）
+- `docs/top5-specs/material-researcher.md` — 单个排名位的素材调研（搜索 + 截图目视验证）
+- `docs/top5-specs/clip-editor.md` — 精确选片（Gemini Pro 选镜头 → `cut-clips.mjs` 分段下载、切片、写 clips）
+- `.mcp.json` — 注册三个本地 MCP 服务：`ytdlp`、`bili`、`gemini-media`（实现在 `tools/*-mcp.mjs`）。Tavily / Firecrawl 用的是用户级 MCP
+- `tools/ytdlp-accounts.json` — yt-dlp 账号池（cookie 来源，可选 per-account 代理）；`tools/cookies-*.txt` 不入库，缺失的账号启动时自动跳过
+
+yt-dlp 前提：`uv tool install "yt-dlp[default]"`（`[default]` 带上 JS 挑战求解脚本），
+且 `%APPDATA%\yt-dlp\config.txt` 里有 `--js-runtimes node`（yt-dlp 默认只认 deno）。
+
+bili 前提：`uv tool install bilibili-cli`（搜索）+ `winget install nilaoda.BBDown`（下载，会连带装 ffmpeg）。
+两者都要各自扫码登录一次：`bili login`（不登录时 `bili_user_videos` 会被风控拦成验证页）、`BBDown login`（不登录拿不到 1080P）。
+`bili-mcp.mjs` 会剥掉子进程的代理环境变量——B站必须直连，经境外代理会 HTTP 412。
+
+gemini-media 前提：`Desktop/gemini-go` 在 `:8787` 运行，走 `/v1`（旧的 `/internal/v1` 已不存在，会返回 WebUI 的 HTML）。
+
+已归档（`docs/archive/vscode-copilot/`，不再维护）：此前的 VS Code Copilot 多 agent 版本——
+`@top5-video` 编排、高手如云流程（`@高手如云` / `@front-scout` / `@footage-scout`）、
+`@prompt-writer`、`@remotion-reverse`，以及 `bilibili-search`、`remotion-add-template` 两个 skill 和原 `.vscode/mcp.json`。
+要复用其中某个流程时，从归档里取出来改写，不要原样启用（工具名是 Copilot 格式）。
 
 ## Remotion 依赖（官方 npm 包）
 

@@ -118,15 +118,32 @@ const TOOLS = [
 // CLI execution helpers
 // ---------------------------------------------------------------------------
 
+// B站是境内站，必须直连：经境外代理出去会被风控拦成 HTTP 412。
+// PYTHONUTF8 让 bili（Python）在管道下输出 UTF-8，否则 Windows 上是 GBK。
+const childEnv = { ...process.env, PYTHONUTF8: '1' };
+for (const k of Object.keys(childEnv)) {
+  if (/^(https?|all)_proxy$/i.test(k)) delete childEnv[k];
+}
+
+// BBDown（.NET）在中文 Windows 的管道下输出 GBK，且没有开关可改。
+function decode(cmd, chunks) {
+  const buf = Buffer.concat(chunks);
+  const encoding = cmd === 'BBDown' && process.platform === 'win32' ? 'gbk' : 'utf-8';
+  return new TextDecoder(encoding).decode(buf);
+}
+
 function runCmd(cmd, args) {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stdout = '', stderr = '';
-    proc.stdout.on('data', (d) => { stdout += d; });
-    proc.stderr.on('data', (d) => { stderr += d; });
+    const proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], env: childEnv });
+    const stdout = [], stderr = [];
+    proc.stdout.on('data', (d) => { stdout.push(d); });
+    proc.stderr.on('data', (d) => { stderr.push(d); });
     proc.on('close', (code) => {
-      if (code !== 0) reject(new Error(`${cmd} exited ${code}: ${stderr.slice(0, 500)}`));
-      else resolve(stdout);
+      const out = decode(cmd, stdout);
+      if (code === 0) return resolve(out);
+      // BBDown 把错误写在 stdout，stderr 是空的
+      const detail = decode(cmd, stderr).trim() || out.trim().slice(-500);
+      reject(new Error(`${cmd} exited ${code}: ${detail.slice(0, 500)}`));
     });
     proc.on('error', reject);
   });

@@ -186,12 +186,11 @@ npm run build
 
 ## 🤖 AI Agent Integration
 
-This project is designed to work with VS Code Copilot custom agents:
+The Top 5 pipeline is driven by Claude Code: ask it to read `docs/top5-solo.md` and follow it
+(copywriting → stats → research → TTS → beat check → clip selection). Stage specs live in `docs/top5-specs/`;
+local MCP servers (yt-dlp, Bilibili, Gemini media analysis) are registered in `.mcp.json`.
 
-- **`@top5-video`** — Orchestrates the full pipeline: copywriting → research → TTS → clip → configure → render
-- **`@material-researcher`** — Deep web research for video material
-- **`@copywriter`** — Chinese voiceover scripts in Sodabobo_ style (no research data access)
-- **`@clip-editor`** — Precise video clip selection and cutting
+The earlier VS Code Copilot multi-agent setup is archived under `docs/archive/vscode-copilot/`.
 
 ## 📜 License
 

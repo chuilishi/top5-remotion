@@ -16,7 +16,7 @@
 
 import { spawn } from 'child_process';
 import { createInterface } from 'readline';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, resolve, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,12 +39,19 @@ function loadAccounts() {
     const raw = readFileSync(configPath, 'utf-8');
     const list = JSON.parse(raw);
     if (!Array.isArray(list) || list.length === 0) throw new Error('empty');
-    return list.map((a) => ({
+    const loaded = list.map((a) => ({
       id: a.id || 'unnamed',
       cookies: a.cookies ? (isAbsolute(a.cookies) ? a.cookies : resolve(__dirname, a.cookies)) : null,
       cookies_from_browser: a.cookies_from_browser || null,
       proxy: a.proxy || null,
-    }));
+    })).filter((a) => {
+      // cookie 文件缺失的账号必然失败，留在池里只会让负载均衡把任务分给它
+      if (!a.cookies || existsSync(a.cookies)) return true;
+      process.stderr.write(`[ytdlp-mcp] account "${a.id}" skipped — cookies file not found: ${a.cookies}\n`);
+      return false;
+    });
+    if (loaded.length === 0) throw new Error('no usable account');
+    return loaded;
   } catch {
     process.stderr.write('[ytdlp-mcp] No valid ytdlp-accounts.json — using single default account\n');
     return [{ id: 'default', cookies: null, cookies_from_browser: null, proxy: null }];
@@ -171,13 +178,26 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        urls:       { type: 'array', items: { type: 'string' }, description: 'YouTube video URLs to download' },
+        urls:       { type: 'array', items: { type: 'string' }, description: 'YouTube video URLs to download in full. Can be combined with or replaced by sections.' },
+        sections:   {
+          type: 'array',
+          description: 'Download only these time ranges. Each item → "{id}@{start}-{end}.mp4" (1 decimal) whose t=0 is exactly start (cuts re-keyframed). For clip editing, pass the list printed by `node scripts/cut-clips.mjs <rank-yaml> <clips-json> --sections` verbatim.',
+          items: {
+            type: 'object',
+            properties: {
+              url:   { type: 'string' },
+              start: { type: 'number', description: 'Section start (seconds)' },
+              end:   { type: 'number', description: 'Section end (seconds)' },
+            },
+            required: ['url', 'start', 'end'],
+          },
+        },
         output_dir: { type: 'string', description: 'Output directory (e.g. "temp_analysis/godot")' },
         quality:    { type: 'string', enum: ['preview', 'hq'], description: '"preview" = worst[height>=360], "hq" = bestvideo[height<=1080]+bestaudio', default: 'preview' },
-        filename_template: { type: 'string', description: 'Output filename template (default "%(id)s.mp4" for preview, "hq_%(id)s.mp4" for hq)' },
+        filename_template: { type: 'string', description: 'Output filename template for full downloads (default "%(id)s.mp4" for preview, "hq_%(id)s.mp4" for hq). Ignored for sections.' },
         account_id: { type: 'string', description: 'Force a specific account ID. Omit for auto load-balance.' },
       },
-      required: ['urls', 'output_dir'],
+      required: ['output_dir'],
     },
   },
   {
@@ -268,32 +288,53 @@ async function handleChannelList({ channel_url, max_items = 30, account_id }) {
   return parseMetadataLines(output);
 }
 
-async function handleDownload({ urls, output_dir, quality = 'preview', filename_template, account_id }) {
+async function handleDownload({ urls = [], sections = [], output_dir, quality = 'preview', filename_template, account_id }) {
+  if (!urls.length && !sections.length) throw new Error('Provide urls and/or sections');
   const fmt = quality === 'hq'
     ? 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
     : 'worst[height>=360]';
-  const tpl = filename_template || (quality === 'hq' ? 'hq_%(id)s.mp4' : '%(id)s.mp4');
-  const baseArgs = [
+  const commonArgs = [
     '-f', fmt,
     '--merge-output-format', 'mp4',
     '--no-download-archive',
     '--no-part',
     '--force-overwrites',
     '--socket-timeout', '15',
-    '-o', `${output_dir}/${tpl}`,
   ];
 
-  const tasks = urls.map((url) => {
+  // 分段文件名带起止秒数：cut-clips.mjs 靠它把源视频时间戳换算成文件内时间戳。
+  // --force-keyframes-at-cuts 保证文件 t=0 精确对应 start，否则会对齐到前一个关键帧。
+  const jobs = [
+    ...urls.map((url) => ({
+      label: url,
+      args: [...commonArgs, '-o', `${output_dir}/${filename_template || (quality === 'hq' ? 'hq_%(id)s.mp4' : '%(id)s.mp4')}`, url],
+    })),
+    ...sections.map(({ url, start, end }) => {
+      const range = `${Number(start).toFixed(1)}-${Number(end).toFixed(1)}`;
+      return {
+        label: `${url} [${range}]`,
+        args: [
+          ...commonArgs,
+          '--download-sections', `*${range}`,
+          '--force-keyframes-at-cuts',
+          '-o', `${output_dir}/%(id)s@${range}.mp4`,
+          url,
+        ],
+      };
+    }),
+  ];
+
+  const tasks = jobs.map(({ label, args }) => {
     const account = resolveAccount(account_id);
     return enqueueForAccount(account, async () => {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          process.stderr.write(`[ytdlp-mcp] download ${url} via "${account.id}"${attempt > 1 ? ` (retry ${attempt})` : ''}${account.proxy ? ` proxy=${account.proxy}` : ''}\n`);
-          const output = await runYtdlp([...baseArgs, url], account);
-          return { url, account: account.id, output: output.slice(-500) };
+          process.stderr.write(`[ytdlp-mcp] download ${label} via "${account.id}"${attempt > 1 ? ` (retry ${attempt})` : ''}${account.proxy ? ` proxy=${account.proxy}` : ''}\n`);
+          const output = await runYtdlp(args, account);
+          return { account: account.id, output: output.slice(-500) };
         } catch (err) {
           if (attempt >= 2) throw err;
-          process.stderr.write(`[ytdlp-mcp] ${url} failed on "${account.id}", retrying in 3s...\n`);
+          process.stderr.write(`[ytdlp-mcp] ${label} failed on "${account.id}", retrying in 3s...\n`);
           await new Promise((r) => setTimeout(r, 3000));
         }
       }
@@ -302,8 +343,8 @@ async function handleDownload({ urls, output_dir, quality = 'preview', filename_
 
   const results = await Promise.allSettled(tasks);
   const summary = results.map((r, i) => {
-    if (r.status === 'fulfilled') return { url: urls[i], status: 'ok', account: r.value.account };
-    return { url: urls[i], status: 'error', error: r.reason?.message?.slice(0, 300) };
+    if (r.status === 'fulfilled') return { target: jobs[i].label, status: 'ok', account: r.value.account };
+    return { target: jobs[i].label, status: 'error', error: r.reason?.message?.slice(0, 300) };
   });
 
   return { status: 'ok', downloads: summary };

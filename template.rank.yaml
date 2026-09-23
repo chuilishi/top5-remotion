@@ -1,19 +1,20 @@
 # ╔══════════════════════════════════════════════════════════╗
 # ║  Rank YAML 模板 — 每个排名位一个文件                      ║
 # ║  文件名: projects/{project}/rank_{N}_{kebab-titleEn}.yaml ║
-# ║  阶段 A (@top5-video) 填写: voiceover 文本, subtitles 文本, stats  ║
-# ║  阶段 B+ (fill-timeline.mjs) 自动填写: 所有时间字段        ║
-# ║  阶段 C (@clip-editor) 追加: clips                       ║
+# ║  阶段 A (@top5-video) 填写: voiceover/subtitles 文本, stats（搜索查证）║
+# ║  阶段 B (fill-timeline.mjs) 自动填写: 所有时间字段          ║
+# ║  Phase 4 (cut-clips.mjs) 自动写入: clips                   ║
 # ║                                                          ║
 # ║  ⚠ LLM 不要写任何时间字段 (durationSec, offsetSec, startSec) ║
 # ║  ⚠ 这些字段由 fill-timeline.mjs 在 TTS 后自动添加          ║
+# ║  ⚠ clips 整块由 cut-clips.mjs 生成，LLM 不要手写            ║
 # ╚══════════════════════════════════════════════════════════╝
 
 rank: 5                        # 排名位 (5=最低, 1=最高)
 titleEn: ""                    # 英文名 (用于文件夹命名)
 titleZh: ""                    # 中文名 (用于配音/字幕)
 
-# ── @top5-video 阶段 B+ 添加（品牌名配音）──────────────
+# ── @top5-video 阶段 B 添加（品牌名配音）───────────────
 # 类型 A（有中文名）: brand_en.mp3 + brand_zh.mp3
 # 类型 B（仅英文名）: brand_en.mp3
 # → 只写 src + text，durationSec 由 fill-timeline 自动添加
@@ -43,25 +44,22 @@ stats:
   - value: ""
     voiceoverIndex: 2
 
-# ── @clip-editor 填写区域 ─────────────────────────────────
-# ╔══════════════════════════════════════════════════════════╗
-# ║  CLIP RULES — clip-editor MUST follow                   ║
-# ║  • 7-12 clips, each 0.5-2.5s (target 1.0-1.5s)         ║
-# ║  • Total ≈ voiceover duration                           ║
-# ║  • ALL fields below are REQUIRED                        ║
-# ║  • offsetSec = prev offsetSec + prev durationSec        ║
-# ║  • File naming: clip_001.mp4, clip_002.mp4, ...         ║
-# ╚══════════════════════════════════════════════════════════╝
+# ── cut-clips.mjs 自动生成区域 ─────────────────────────────
+# @clip-editor 只负责让 Gemini 选镜头，然后运行：
+#   node scripts/cut-clips.mjs <本文件> <clips-json>
+# 脚本切片并整块覆盖 clips。以下为生成结果示例，不要手写：
+#   startFrom         = 切片文件里跳过的前置容差（通常 0.5，源视频开头处会更小）
+#   offsetSec         = 前面所有 clip 的 durationSec 之和（按 fps 帧对齐）
+#   paddedDurationSec = startFrom + durationSec + 0.5（切片文件实际长度）
 
 clips:
   - src: "{project}/{folder}/clip_001.mp4"
-    startFrom: 0.5              # 跳过 0.5s 容差
-    durationSec: 1.5            # MUST be 0.5-2.5s
-    offsetSec: 0                # 时间线起始位置
-    paddedDurationSec: 2.5      # = durationSec + 1.0 (含容差)
+    startFrom: 0.5
+    durationSec: 1.5
+    offsetSec: 0
+    paddedDurationSec: 2.5
   - src: "{project}/{folder}/clip_002.mp4"
     startFrom: 0.5
-    durationSec: 1.2            # MUST be 0.5-2.5s
-    offsetSec: 1.5              # = prev offset(0) + prev dur(1.5)
+    durationSec: 1.2
+    offsetSec: 1.5
     paddedDurationSec: 2.2
-  # ... continue: 7-12 clips, total ≈ voiceover duration

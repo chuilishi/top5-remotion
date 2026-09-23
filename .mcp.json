@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "ytdlp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["tools/ytdlp-mcp.mjs"]
+    },
+    "bili": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["tools/bili-mcp.mjs"]
+    },
+    "gemini-media": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["tools/gemini-media-mcp.mjs"]
+    }
+  }
+}
