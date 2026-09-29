@@ -107,7 +107,7 @@ const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        args: { type: 'array', items: { type: 'string' }, description: 'yutto command-line arguments (e.g. ["BV1xxx", "-d", "temp_analysis/", "-q", "80"])' },
+        args: { type: 'array', items: { type: 'string' }, description: 'yutto command-line arguments. For downloads include "-x", "no" — yutto otherwise uses the Windows system proxy (e.g. ["BV1xxx", "-x", "no", "-d", "temp_analysis/", "-q", "80"])' },
       },
       required: ['args'],
     },
@@ -119,6 +119,7 @@ const TOOLS = [
 // ---------------------------------------------------------------------------
 
 // B站是境内站，必须直连：经境外代理出去会被风控拦成 HTTP 412。
+// 这里只清环境变量；yutto 另外默认（-x auto）会读 Windows 系统代理，下载参数里要显式 -x no。
 // PYTHONUTF8 让 bili / yutto（都是 Python）在管道下输出 UTF-8，否则 Windows 上是 GBK。
 const childEnv = { ...process.env, PYTHONUTF8: '1' };
 for (const k of Object.keys(childEnv)) {
@@ -199,6 +200,7 @@ async function handleDownload({ urls, output_dir, quality = 'preview' }) {
       const args = [
         url.startsWith('http') ? url : `https://www.bilibili.com/video/${bvid}/`,
         '-d', output_dir,
+        '-x', 'no',
         '-q', qn,
         '--vcodec', 'avc:copy',
         '-tp', '{bvid}',

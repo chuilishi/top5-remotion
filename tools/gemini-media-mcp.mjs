@@ -18,8 +18,10 @@
  * Hard limit: total video/audio duration per call <= 30 min (probed with ffprobe,
  * not trusted from the agent). Longer batches are rejected, not truncated.
  *
- * Model is fixed to Gemini Pro and deliberately not exposed as a tool argument,
- * so agents can't fall back to Flash for clip selection.
+ * Model is fixed to Gemini Flash (non-thinking) and not exposed as a tool argument.
+ * Tested against ground truth (reading on-screen text / HUD numbers from 360P–1080P
+ * video, 2026-09): Flash was consistently accurate; Pro fabricated numbers, flipped
+ * between runs and was 2x slower, so Pro is not used.
  */
 
 import { createInterface } from 'readline';
@@ -33,7 +35,7 @@ import https from 'https';
 
 const BASE_URL = (process.env.GEMINI_BASE_URL || 'http://127.0.0.1:8787/v1').replace(/\/+$/, '');
 const API_KEY = process.env.GEMINI_API_KEY || 'sk-dummy';
-const MODEL = 'gemini-3.1-pro-preview';
+const MODEL = 'gemini-3.5-flash';
 
 const MAX_FILES = 9;
 // gemini-go caps request bodies at 256 MiB; base64 inflates by 4/3.
@@ -114,7 +116,7 @@ function fmtDuration(sec) {
 const TOOLS = [
   {
     name: 'analyze_media',
-    description: `Analyze local video/audio/image files with Gemini Pro (${MODEL}), or send a text-only prompt when file_paths is omitted. Returns Gemini's text reply (often markdown with embedded JSON). Hard limits per call (rejected otherwise, split into batches): max ${MAX_FILES} files, total video/audio duration <= ${MAX_TOTAL_DURATION_SEC / 60} min, total size <= ${MAX_TOTAL_BYTES / 1024 / 1024} MB.`,
+    description: `Analyze local video/audio/image files with Gemini Flash (${MODEL}), or send a text-only prompt when file_paths is omitted. Returns Gemini's text reply (often markdown with embedded JSON). Hard limits per call (rejected otherwise, split into batches): max ${MAX_FILES} files, total video/audio duration <= ${MAX_TOTAL_DURATION_SEC / 60} min, total size <= ${MAX_TOTAL_BYTES / 1024 / 1024} MB.`,
     inputSchema: {
       type: 'object',
       properties: {

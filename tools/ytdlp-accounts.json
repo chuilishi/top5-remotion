@@ -1,14 +1,12 @@
 [
   {
     "id": "main",
-    "cookies_from_browser": "firefox"
+    "cookies_from_browser": "firefox",
+    "proxy": "http://127.0.0.1:7890"
   },
   {
     "id": "canary",
-    "cookies": "cookies-canary.txt"
-  },
-  {
-    "id": "chrome",
-    "cookies": "cookies-chrome.txt"
+    "cookies": "cookies-canary.txt",
+    "proxy": "http://127.0.0.1:7890"
   }
 ]

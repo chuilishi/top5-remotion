@@ -218,12 +218,21 @@ const TOOLS = [
 // yt-dlp execution
 // ---------------------------------------------------------------------------
 
+// Never inherit HTTP(S)_PROXY / ALL_PROXY from the environment: on this machine they point at a remote proxy
+// that breaks ffmpeg's HLS fetches (section downloads fail with "[httpproxy] Error reading HTTP response: End
+// of file"). Routing is set explicitly per account via "proxy" in ytdlp-accounts.json (yt-dlp passes it on
+// to ffmpeg too).
+const childEnv = { ...process.env };
+for (const k of Object.keys(childEnv)) {
+  if (/^(https?|all)_proxy$/i.test(k)) delete childEnv[k];
+}
+
 function runYtdlp(args, account = null) {
   const extraArgs = account ? accountArgs(account) : [];
   const allArgs = [...extraArgs, ...args];
   const accLabel = account ? ` [${account.id}]` : '';
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', allArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn('yt-dlp', allArgs, { stdio: ['ignore', 'pipe', 'pipe'], env: childEnv });
     let stdout = '', stderr = '';
     proc.stdout.on('data', (d) => { stdout += d; });
     proc.stderr.on('data', (d) => {
