@@ -186,8 +186,8 @@ npm run build
 
 ## 🤖 AI Agent Integration
 
-The Top 5 pipeline is driven by Claude Code: ask it to read `docs/top5-solo.md` and follow it
-(copywriting → stats → research → TTS → beat check → clip selection). Stage specs live in `docs/top5-specs/`;
+The Top 5 pipeline is driven by Claude Code: run the `top5` skill (`/top5 <topic> <#5→#1 ranking>`, defined in `.claude/skills/top5/`)
+(copywriting → stats → research → TTS → beat check → clip selection). Stage specs live alongside it in the same skill directory;
 local MCP servers (yt-dlp, Bilibili, Gemini media analysis) are registered in `.mcp.json`.
 
 The earlier VS Code Copilot multi-agent setup is archived under `docs/archive/vscode-copilot/`.

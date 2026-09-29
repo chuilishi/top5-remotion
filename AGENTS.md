@@ -83,14 +83,14 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 ## 视频制作流程（Claude Code）
 
-Top5Video：让 Claude Code 读 `docs/top5-solo.md` 并按它执行（例：「读 docs/top5-solo.md，做一期：主题 + #5→#1 排名」）。
+Top5Video：用 `top5` skill（`.claude/skills/top5/`），例：`/top5 全球运动鞋销量 #5 Puma … #1 Nike`，或直接说「做一期 Top5：主题 + #5→#1 排名」。
 一个模型走完整条流程：建项目 → 写文案 → 查 stat → 找素材 × 5 → TTS + fill-timeline → 卡点校验 → 选片切片 × 5 → `npm run config`。
 例外是文案（初稿和卡点改写）：交给 `copywriter` 子代理（`.claude/agents/copywriter.md`，固定 `model: claude-opus-4-6`，只有 Read 权限）。**调用它时不要传 `model` 参数**——调用参数优先级高于 frontmatter，会把 4.6 覆盖掉。
 
-- `docs/top5-solo.md` — 总流程。不复制各阶段规范，到对应阶段再去读下面三份
-- `docs/top5-specs/copywriter.md` — 文案风格（内嵌 10 期精选参考，纯凭风格直觉写，不接触研究资料）；由 `copywriter` 子代理读取，主流程不读
-- `docs/top5-specs/material-researcher.md` — 单个排名位的素材调研（搜索 + 截图目视验证）
-- `docs/top5-specs/clip-editor.md` — 精确选片（Gemini Flash 选镜头 → `cut-clips.mjs` 分段下载、切片、写 clips）
+- `.claude/skills/top5/SKILL.md` — 总流程。不复制各阶段规范，到对应阶段再去读同目录下三份附属文件
+- `copywriter.md` — 文案风格（内嵌 10 期精选参考，纯凭风格直觉写，不接触研究资料）；由 `copywriter` 子代理读取，主流程不读
+- `material-researcher.md` — 单个排名位的素材调研（搜索 + 截图目视验证）
+- `clip-editor.md` — 精确选片（Gemini Flash 选镜头 → `cut-clips.mjs` 分段下载、切片、写 clips）
 - `.mcp.json` — 注册三个本地 MCP 服务：`ytdlp`、`bili`、`gemini-media`（实现在 `tools/*-mcp.mjs`）。Tavily / Firecrawl 用的是用户级 MCP
 - `tools/ytdlp-accounts.json` — yt-dlp 账号池（cookie 来源，可选 per-account 代理）；`tools/cookies-*.txt` 不入库，缺失的账号启动时自动跳过
 

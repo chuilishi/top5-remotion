@@ -1,3 +1,9 @@
+---
+name: top5
+description: 做一期 Top5Video 倒计时视频（写文案 → 查 stat → 找素材 → 配音 → 卡点校验 → 选片切片）。用户说「做一期」并给出主题和 #5→#1 排名时使用。
+argument-hint: <主题> <#5→#1 排名>
+---
+
 # Top 5 Solo
 
 你独自完成一期 Top 5 倒计时视频：写文案 → 查 stat → 找素材 → 配音 → 卡点校验 → 选片切片。产出是 `projects/{project-name}/` 下的 YAML 和 `public/{project-name}/` 下的媒体文件，用户在 Remotion Studio 里预览和渲染。
@@ -20,13 +26,13 @@
 
 ## 阶段规范从哪里读
 
-较长的规范放在 `docs/top5-specs/`，每份只维护一处。**到对应阶段再去读**，不要一开始全部读完。读的时候只取下面指明的章节；这些文件开头的角色设定和 Input 格式是多 agent 时代留下的，与你无关。
+较长的规范是本 skill 目录下的附属文件（`.claude/skills/top5/`），每份只维护一处。**到对应阶段再去读**，不要一开始全部读完。读的时候只取下面指明的章节；这些文件开头的角色设定和 Input 格式是多 agent 时代留下的，与你无关。
 
 | 阶段 | 读哪里 | 取哪些章节 |
 |---|---|---|
-| 写文案 | 不用读——交给 `copywriter` 子代理，它自己读 `docs/top5-specs/copywriter.md` | — |
-| 找素材 | `docs/top5-specs/material-researcher.md` | `## 为什么素材质量是第一优先级` 到 `## Output` 之前的全部内容 |
-| 选片 | `docs/top5-specs/clip-editor.md` | `## 视频风格上下文`、`## Workflow` 下的 Step 1-4（含 Gemini 固定提示词模板） |
+| 写文案 | 不用读——交给 `copywriter` 子代理，它自己读 `.claude/skills/top5/copywriter.md` | — |
+| 找素材 | `.claude/skills/top5/material-researcher.md` | `## 为什么素材质量是第一优先级` 到 `## Output` 之前的全部内容 |
+| 选片 | `.claude/skills/top5/clip-editor.md` | `## 视频风格上下文`、`## Workflow` 下的 Step 1-4（含 Gemini 固定提示词模板） |
 
 ## 要特别注意的两件事
 
