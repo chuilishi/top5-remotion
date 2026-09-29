@@ -85,11 +85,12 @@ rank YAML 是 Top5 模板的唯一数据源。修改数据只改 rank YAML，然
 
 Top5Video：让 Claude Code 读 `docs/top5-solo.md` 并按它执行（例：「读 docs/top5-solo.md，做一期：主题 + #5→#1 排名」）。
 一个模型走完整条流程：建项目 → 写文案 → 查 stat → 找素材 × 5 → TTS + fill-timeline → 卡点校验 → 选片切片 × 5 → `npm run config`。
+例外是文案（初稿和卡点改写）：交给 `copywriter` 子代理（`.claude/agents/copywriter.md`，固定 `model: claude-opus-4-6`，只有 Read 权限）。**调用它时不要传 `model` 参数**——调用参数优先级高于 frontmatter，会把 4.6 覆盖掉。
 
 - `docs/top5-solo.md` — 总流程。不复制各阶段规范，到对应阶段再去读下面三份
-- `docs/top5-specs/copywriter.md` — 文案风格（内嵌 10 期精选参考，纯凭风格直觉写，不接触研究资料）
+- `docs/top5-specs/copywriter.md` — 文案风格（内嵌 10 期精选参考，纯凭风格直觉写，不接触研究资料）；由 `copywriter` 子代理读取，主流程不读
 - `docs/top5-specs/material-researcher.md` — 单个排名位的素材调研（搜索 + 截图目视验证）
-- `docs/top5-specs/clip-editor.md` — 精确选片（Gemini Pro 选镜头 → `cut-clips.mjs` 分段下载、切片、写 clips）
+- `docs/top5-specs/clip-editor.md` — 精确选片（Gemini Flash 选镜头 → `cut-clips.mjs` 分段下载、切片、写 clips）
 - `.mcp.json` — 注册三个本地 MCP 服务：`ytdlp`、`bili`、`gemini-media`（实现在 `tools/*-mcp.mjs`）。Tavily / Firecrawl 用的是用户级 MCP
 - `tools/ytdlp-accounts.json` — yt-dlp 账号池（cookie 来源，可选 per-account 代理）；`tools/cookies-*.txt` 不入库，缺失的账号启动时自动跳过
 
@@ -98,10 +99,19 @@ yt-dlp 前提：`uv tool install "yt-dlp[default]"`（`[default]` 带上 JS 挑�
 
 bili 前提：`uv tool install bilibili-cli`（搜索）+ `uv tool install yutto`（下载，合并音视频要 PATH 里有 ffmpeg：`winget install Gyan.FFmpeg`）。
 两者都要各自扫码登录一次：`bili login`（不登录时 `bili_user_videos` 会被风控拦成验证页）、`yutto auth login`（不登录拿不到 1080P；`yutto auth status` 查状态）。
-`bili-mcp.mjs` 会剥掉子进程的代理环境变量——B站必须直连，经境外代理会 HTTP 412（yutto 同样，手动跑前先清掉 `http(s)_proxy`）。
+`bili-mcp.mjs` 会剥掉子进程的代理环境变量——B站必须直连，经境外代理会 HTTP 412。yutto 除了环境变量，默认（`-x auto`）还会读 Windows 系统代理，手动下载要加 `-x no`（`bili_download` 已内置）。
 非大会员账号，`bili_download` 的 `hq` 实际拿到的是 1080P（约 3 Mbps），不是 1080P+ 高码率。
 
 gemini-media 前提：`Desktop/gemini-go` 在 `:8787` 运行，走 `/v1`（旧的 `/internal/v1` 已不存在，会返回 WebUI 的 HTML）。
+
+TTS（`tts_gen.py`）默认引擎是 **VoxCPM2**：用 `tools/voices/sodabobo/ref.wav` + `ref.txt`（B站 Sodabobo_ 的旁白，不入库）做零样本克隆。
+本机 GTX 1060 跑不动，每次运行在 Colab 上临时开一台 L4 → 生成 → 下载 → `colab stop`（`tools/voxcpm/colab_run.sh`）。
+固定开销约 1.5 分钟（开机 + 装依赖与下载 4.7GB 权重并行 + 加载模型），之后每句 4-6 秒；3 句约 2 分钟，整期 32 句约 4-5 分钟，约 0.1 计算单元。
+加载时关掉了 `torch.compile`（`optimize=False`）：开着要多花约 100 秒编译，只换来每句快 0.8 秒，不划算。
+Drive 缓存实测不划算（2026-09-29）：`colab drivemount` 每台新机器都要浏览器授权，授权后仍挂载失败；改用 rclone 能用，但从 Drive 恢复 8GB 要 144 秒（加装 rclone 15 秒），而现在直接装依赖 + 从 HuggingFace 下载只要 46 秒。
+结果按文案缓存在 `.tts_cache/voxcpm/`：重跑整个 batch 时只生成改过的句子，全部命中缓存就不开 Colab。
+前提：WSL Ubuntu 里装了 Colab CLI（`uv tool install google-colab-cli`，已登录），WSL 通过 Windows 上 Clash 的 7890 端口联网——**Clash 必须开「允许局域网连接」**，否则 WSL 连不上。
+旧的 Fish Audio 引擎仍可用：`--engine fish`（需 `FISH_AUDIO_API_KEY`）。
 
 已归档（`docs/archive/vscode-copilot/`，不再维护）：此前的 VS Code Copilot 多 agent 版本——
 `@top5-video` 编排、高手如云流程（`@高手如云` / `@front-scout` / `@footage-scout`）、
@@ -225,6 +235,6 @@ OffthreadVideo 缓存沿用上游自适应默认值（理由见该文件注释�
 - 视频文件用 `<OffthreadVideo>` 必须 `volume={0}`
 - `@remotion/media` 的 `<Video>`（`gaoshou-ru-yun` 模板在用）要用 `objectFit` prop，不能把 `objectFit` 写进 `style`
 - fps = 60
-- TTS 语速：7.3 字/秒（Fish Audio, speed=1.3, atempo=1.1）
+- TTS 语速：约 6 字/秒（VoxCPM2 原速，atempo=1.0，贴近 Sodabobo 本人的 ~6.4 字/秒；样本还少，做几期后再校准）。旧 Fish 引擎是 7.3 字/秒（speed=1.3, atempo=1.1）
 - 用 `staticFile()` 引用 public/ 下的文件
 - 动画用 `useCurrentFrame()` + `interpolate()`，不用 CSS transition

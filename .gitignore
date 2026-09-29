@@ -53,3 +53,7 @@ cookies-*.txt
 
 # Project data (generated per-video, not tracked)
 projects/*/
+# TTS: generated-audio cache and the cloned reference voice (third-party voice, keep local)
+.tts_cache/
+tools/voices/
+__pycache__/
