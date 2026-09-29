@@ -2,7 +2,7 @@
 
 你独自完成一期 Top 5 倒计时视频：写文案 → 查 stat → 找素材 → 配音 → 卡点校验 → 选片切片。产出是 `projects/{project-name}/` 下的 YAML 和 `public/{project-name}/` 下的媒体文件，用户在 Remotion Studio 里预览和渲染。
 
-整条流程由你一个人走完。按 Claude Code 编写；此前的 VS Code Copilot 多 agent 版本已归档到 `docs/archive/vscode-copilot/`，不再维护。
+整条流程由你一个人走完，只有文案交给 `copywriter` 子代理（见 Phase 2）。按 Claude Code 编写；此前的 VS Code Copilot 多 agent 版本已归档到 `docs/archive/vscode-copilot/`，不再维护。
 
 ## 需要的工具
 
@@ -24,14 +24,14 @@
 
 | 阶段 | 读哪里 | 取哪些章节 |
 |---|---|---|
-| 写文案 | `docs/top5-specs/copywriter.md` | `## Output`、`## 参考文案（模仿此风格）` |
+| 写文案 | 不用读——交给 `copywriter` 子代理，它自己读 `docs/top5-specs/copywriter.md` | — |
 | 找素材 | `docs/top5-specs/material-researcher.md` | `## 为什么素材质量是第一优先级` 到 `## Output` 之前的全部内容 |
 | 选片 | `docs/top5-specs/clip-editor.md` | `## 视频风格上下文`、`## Workflow` 下的 Step 1-4（含 Gemini 固定提示词模板） |
 
 ## 要特别注意的两件事
 
 **1. 文案必须最先写，写完再碰任何资料。**
-参考文案的味道来自风格直觉：有梗、有态度的定位句，而不是资料摘抄。一旦先看了调研资料，写出来的就会变成摘抄。这层隔离靠顺序来保证：在搜索任何东西之前把 5 段文案定稿。之后查到的 stat 和素材信息**不要回填进文案**；卡点校验要求改文案时，也只按参考风格增删句子，不要引入查到的数据。
+参考文案的味道来自风格直觉：有梗、有态度的定位句，而不是资料摘抄。一旦先看了调研资料，写出来的就会变成摘抄。这层隔离由 `copywriter` 子代理保证：它只有 Read 权限、没有任何搜索工具，输入也只有主题和排名。它的提示词刻意只有一句「模仿参考文案的风格」——任何额外要求都会让模型产生倾向，不要往里加。你仍要在搜索任何东西之前拿到 5 段定稿；之后查到的 stat 和素材信息**不要回填进文案**，也不要传给子代理；卡点校验要求改文案时，同样交给子代理按秒数改写。
 
 **2. 上下文会很长，用文件做存档点。**
 一期视频要经过几十次搜索、截图和 Gemini 调用。每个排名位的素材调研一结束，立刻按 material-researcher 的 `## Output` 格式写 `projects/{project-name}/research-{NN}-{folder}.md`；后面选片时以这个文件为准，不要凭记忆。用 todo list 逐个排名位跟踪进度，避免做完两三个就"忘了"剩下的。
@@ -47,7 +47,21 @@
 
 ### Phase 2: 文案
 
-读 `docs/top5-specs/copywriter.md` 的参考文案，为 5 个排名位写旁白（每段 55-70 字）。
+用 Agent 工具调用 `copywriter` 子代理（`subagent_type: "copywriter"`），prompt **只**写下面格式的内容，不附加任何别的信息：
+
+```
+主题：{topic}
+排名列表：
+#5 — {title}
+#4 — {title}
+#3 — {title}
+#2 — {title}
+#1 — {title}
+```
+
+**调用时不要传 `model` 参数。** 子代理在 `.claude/agents/copywriter.md` 里固定用 `claude-opus-4-6`；调用时传入的 `model`（哪怕是 `opus`）优先级更高，会把它换成别的模型。
+
+子代理返回 5 段旁白（每段 55-70 字）。你不要改写措辞，只负责下面的切分和建文件。
 
 然后按 `template.rank.yaml` 格式创建 5 个 `rank_{rank}_{folder}.yaml`：
 - 每段文案按**分句标点**切分：句号、逗号、分号、问号、感叹号。**顿号不切**。每句一个 voiceover 条目，subtitles 与之一一对应、文字相同
@@ -97,7 +111,7 @@ uv run tts_gen.py --batch projects/{project-name}/tts_batch.json | node scripts/
 
 1. 运行 `npm run project -- {project-name}`
 2. 报 `ERROR`（超出 72s 卡点，或 #1 配音过长）或 `Warning`（配音过短）时：
-   - 按报错数值微调文案（如 `exceeded by 1.6s` 就删掉约 1.6s 的内容，语速约 7.3 字/秒），遵守上面「文案必须最先写」一节的风格约束
+   - 按约 6 字/秒把报错秒数换算成目标字数，把该段原文交给 `copywriter` 子代理，prompt 只写原文和一句「改成约 N 字」（同样不传 `model`，不附带任何别的信息）
    - 重新切分 voiceover → 重建**完整的** tts_batch.json 并重跑 TTS + fill-timeline（脚本要求 5 个排名位的每个音频都在本次输出里，只跑部分会报 `MISSING`）→ 重新 `npm run config`
    - 反复调整仍不达标则接受，并在最终报告中备注
 3. 通过后记下终端打印的 `[Top5Video] gameplayDurations: ...`（顺序 **#5 → #1**），作为选片的目标时长
